@@ -45,6 +45,8 @@ function [] = make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PLONO,PLAT
 %   17/09/25: completed initial revision
 %   17/09/26: edited output file string
 %   17/09/28: minor edits to how masks are applied and frocing ASCII saved
+%   17/12/29: changed default behavior to using data deeper than the
+%             maximum depth grid point depth
 %
 %   ***********************************************************************
 
@@ -81,7 +83,8 @@ end
 % *** misc (local) parameters ******************************************* %
 %
 % options & parameters
-opt_equalarea = true;
+opt_equalarea = true;  % use equal area grid
+opt_truncateD = false; % remove data deeper that the bottom of depth grid
 max_D = 5000.0;
 % set date
 str_date = [datestr(date,11), datestr(date,5), datestr(date,7)];
@@ -175,12 +178,20 @@ diag_data_n_raw = nmax;
 %
 % *** fliter data ******************************************************* %
 %
+% option:
 % remove any data deeper that the bottom of the depth grid and update nmax
+% *or*
+% set to max_D
 n = 1;
 while (n <= nmax),
     if (data_raw(n,3) > max_D),
-        data_raw(n,:) = [];
-        nmax = nmax - 1;
+        if opt_truncateD,
+            data_raw(n,:) = [];
+            nmax = nmax - 1;
+        else
+            data_raw(n,3) = max_D;
+            n = n + 1;            
+        end
     else
         n = n + 1;
     end
