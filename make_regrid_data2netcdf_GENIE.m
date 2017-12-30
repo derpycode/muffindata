@@ -37,6 +37,14 @@ function [] = make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PLONO,PLAT
 %           will grid the d30Si data in file: 'data_d30Si.dat'
 %           to a WOA-compatable grid (1 degree lon, lat)
 %
+%   NOTE: opt_benthic controls an important behavior:
+%         false => the data is re-gridded straight, and any data lying
+%                  deeper than the deepest depth at a particular grid point
+%                  is ignore
+%         true  => deeper data is enfolded into a benthic mean 
+%         BUT, data deeper than the deepest grid level (anywhere)
+%              is regrided regardless
+%
 %   ***********************************************************************
 %   *** HISTORY ***********************************************************
 %   ***********************************************************************
@@ -47,6 +55,7 @@ function [] = make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PLONO,PLAT
 %   17/09/28: minor edits to how masks are applied and frocing ASCII saved
 %   17/12/29: changed default behavior to using data deeper than the
 %             maximum depth grid point depth
+%   17/12/30: various benthic bug-fixes
 %
 %   ***********************************************************************
 
@@ -84,7 +93,7 @@ end
 %
 % options & parameters
 opt_equalarea = true;  % use equal area grid
-opt_truncateD = false; % remove data deeper that the bottom of depth grid
+opt_benthic   = true; % average in data deeper than bottom of depth grid
 max_D = 5000.0;
 % set date
 str_date = [datestr(date,11), datestr(date,5), datestr(date,7)];
@@ -176,32 +185,32 @@ end
 % save raw data count
 diag_data_n_raw = nmax;
 %
-% *** fliter data ******************************************************* %
+% *** filter data ******************************************************* %
 %
-% option:
-% remove any data deeper that the bottom of the depth grid and update nmax
-% *or*
-% set to max_D
-n = 1;
-while (n <= nmax),
-    if (data_raw(n,3) > max_D),
-        if opt_truncateD,
-            data_raw(n,:) = [];
-            nmax = nmax - 1;
-        else
-            data_raw(n,3) = max_D;
-            n = n + 1;            
-        end
-    else
-        n = n + 1;
-    end
-end
-% move anything exactly at the bottom, slightly shallower ...
-data_raw(find(data_raw(:,3)==max_D),3) = max_D - 0.001;
+% % option:
+% % remove any data deeper that the bottom of the depth grid and update nmax
+% % *or*
+% % set to max_D
+% n = 1;
+% while (n <= nmax),
+%     if (data_raw(n,3) > max_D),
+%         if opt_benthic,
+%             data_raw(n,3) = max_D;
+%             n = n + 1;           
+%         else 
+%             data_raw(n,:) = [];
+%             nmax = nmax - 1;
+%         end
+%     else
+%         n = n + 1;
+%     end
+% end
+% % move anything exactly at the bottom, slightly shallower ...
+% data_raw(find(data_raw(:,3)==max_D),3) = max_D - 0.001;
 % filter lon,lat values
 for n = 1:nmax,
     if (data_raw(n,1) < par_grid_lon_offset), data_raw(n,1) = data_raw(n,1) + 360.0; end
-    if (data_raw(n,1) > (par_grid_lon_offset + 360.0)), data_raw(n,1) = data_raw(n,1) - 360.0; end
+    if (data_raw(n,1) >= (par_grid_lon_offset + 360.0)), data_raw(n,1) = data_raw(n,1) - 360.0; end
     if ( (data_raw(n,2) > 90.0) || (data_raw(n,2) < -90.0) ),
         disp(['ERROR: ', 'Something odd with the latitude values in file: ', str_data_filenamein, ' -- maybe latitude is not the 2nd data column as it should be?']);
         return;
@@ -228,24 +237,61 @@ data_gridded_2Dcount = zeros(n_lon,n_lat);
 %       lat >= lat_edge(n)
 %       lat < lat_edge(n+1)
 % NOTE: deal with special cases of lon or lat grid boundary values
+% NOTE: remember, the k grid vector is counted with 1 == surface
 for n = 1:nmax,
     loc_lon_n = intersect(find(data_raw(n,1)>=loc_axis_lonedge(:)),find(data_raw(n,1)<loc_axis_lonedge(:))-1);
     if (abs(data_raw(n,1)) == abs(par_grid_lon_offset)), loc_lon_n = 1; end
     loc_lat_n = intersect(find(data_raw(n,2)>=loc_axis_latedge(:)),find(data_raw(n,2)<loc_axis_latedge(:))-1);
-    if (data_raw(n,2) == -90), loc_lat_n = 1; end
-    if (data_raw(n,2) == 90), loc_lat_n = n_lat; end
+    if (data_raw(n,2) == -90),   loc_lat_n = 1; end
+    if (data_raw(n,2) == 90),    loc_lat_n = n_lat; end
     loc_D_n   = intersect(find(data_raw(n,3)>=loc_axis_Dedge(:)),find(data_raw(n,3)<loc_axis_Dedge(:))-1);
+    if (data_raw(n,3) >= max_D), loc_D_n = n_D; end
     if (isempty(loc_lon_n*loc_lat_n*loc_D_n)),
         disp(['ERROR: ', 'Failed to regrid ... check lon,lat values and/or grid resolution choice. Error info:']);
         disp(['n = ',num2str(n),' : ',num2str(data_raw(n,4)),' @ ','(',num2str(data_raw(n,1)),',',num2str(data_raw(n,2)),',',num2str(data_raw(n,3)),')',' == ','(',num2str(loc_lon_n),',',num2str(loc_lat_n),',',num2str(loc_D_n),')']);
         return;
     end
-    %disp(['n = ',num2str(n),' : ',num2str(data_raw(n,4)),' @ ','(',num2str(data_raw(n,1)),',',num2str(data_raw(n,2)),',',num2str(data_raw(n,3)),')',' == ','(',num2str(loc_lon_n),',',num2str(loc_lat_n),',',num2str(loc_D_n),')']);
     data_vector(n,:) = [loc_lon_n; loc_lat_n; loc_D_n; data_raw(n,4); 1]';
     data_gridded_rawcount(loc_lon_n,loc_lat_n,loc_D_n) = data_gridded_rawcount(loc_lon_n,loc_lat_n,loc_D_n) + 1;
 end
+%
+% make conform to topo:
+% move deeper depth levels that local deepest level, to local deepest level
+% NOTE: k=1 is the surface in the data array indexing ...
+loc_grid = fliplr(data_grid');
+n = 1;
+while (n <= nmax),
+    % extract data from data vector
+    loc_lon_n = data_vector(n,1);
+    loc_lat_n = data_vector(n,2);
+    loc_D_n   = data_vector(n,3);
+    % convert from normal k grid counting with 1 == deep,
+    % to 1 == surface
+    loc_D_n = n_D - loc_D_n + 1;
+    % extract local grid depth level
+    loc_D_nmax = loc_grid(loc_lon_n,loc_lat_n);
+    % test for land ELSE cell depth index value < grid value 
+    if (loc_D_nmax >= 90),
+        % remove data point
+        data_vector(n,:) = [];
+        nmax = nmax - 1;
+    elseif (loc_D_n < loc_D_nmax),
+        if opt_benthic,
+            % set depth level equal to deepest level at that grid point
+            data_vector(n,3) = n_D - loc_D_nmax + 1;
+            n = n + 1;
+        else
+            % remove data point
+            data_vector(n,:) = [];
+            nmax = nmax - 1;        
+        end
+    else
+        n = n + 1;
+    end
+end
 % save valid data count
 diag_data_n_valid = nmax;
+%
 % average data
 % NOTE: remove duplicate locations (having added the value from there to the running average)
 n = 1;
@@ -270,18 +316,19 @@ while (n <= nmax),
 end
 % save final data count
 diag_data_n = nmax;
+%
 % populate 3D grid
 for n = 1:nmax,
     loc_lon_n = data_vector(n,1);
     loc_lat_n = data_vector(n,2);
-    loc_D_n = data_vector(n,3);
+    loc_D_n   = data_vector(n,3);
     data_gridded(loc_lon_n,loc_lat_n,loc_D_n) = data_vector(n,4);
     data_gridded_2Dcount(loc_lon_n,loc_lat_n) = data_gridded_2Dcount(loc_lon_n,loc_lat_n) + 1;
 end
 %
 % *** SAVE ASCII ******************************************************** %
 %
-% NOTE: re-orientate to (j,i) (from (lon,lat)
+% NOTE: re-orientate to (j,i) (from (lon,lat))
 % NOTE: data starts in array top LH corner as: (par_grid_lon_offset, -90S)
 % surface
 str_filename = [str_data_filenameout '.SUR'];
@@ -298,7 +345,7 @@ plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NaNmask'],['dat
 % NOTE: k=1 is the surface in the data array indexing ...
 % extract benthic data surface
 loc_data  = zeros(n_lon,n_lat) + loc_nullvalue;
-loc_grid = flipud(data_grid');
+loc_grid = fliplr(data_grid');
 grid_data_count = zeros(n_lon,n_lat);
 n_sur = 0;
 n_ben = 0;
@@ -320,15 +367,9 @@ for n = 1:nmax,
         n_sur = n_sur+1;
     end
     % benthic
-    if (loc_D_n >= loc_D_nmax),
-        if (loc_data_count == 0),
-            loc_data(loc_lon_n,loc_lat_n) = data_gridded(loc_lon_n,loc_lat_n,loc_D_n);
-        else
-            % create weighted average
-            loc_data(loc_lon_n,loc_lat_n) = (loc_data_count*loc_data(loc_lon_n,loc_lat_n) + loc_n_n*data_gridded(loc_lon_n,loc_lat_n,loc_D_n))/(loc_data_count+loc_n_n);
-        end
-        % update data count
-        grid_data_count(loc_lon_n,loc_lat_n) = grid_data_count(loc_lon_n,loc_lat_n) + loc_n_n;
+    if (loc_D_n == loc_D_nmax),
+        loc_data(loc_lon_n,loc_lat_n) = data_gridded(loc_lon_n,loc_lat_n,loc_D_n);
+        grid_data_count(loc_lon_n,loc_lat_n) = loc_n_n;
         n_ben = n_ben+1;
     end
 end
