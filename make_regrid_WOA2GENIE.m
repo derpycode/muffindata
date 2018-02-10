@@ -78,6 +78,7 @@ function [] = make_regrid_WOA2GENIE(PZI,PD,PNAME,PLNAME,PUNITS,PSCALE,PIMAX,PJMA
 %   16/02/12: fixed filter for (GENIE) null values
 %             added check for mask dimensions
 %   16/02/29: moved the mask dim filter to the EXAMPLE (prior to cirshift)
+%   18/02/09: added some diagnostics
 %
 %   ***********************************************************************
 
@@ -524,6 +525,57 @@ if strcmp(str_format,'GENIE'),
     axis_lat_edges = [axis_jbnds(1,:) axis_jbnds(2,end)];
     axis_lon_edges = [axis_ibnds(1,:) axis_ibnds(2,end)];
 end
+%
+% *** DIAGNOSTICS ******************************************************* %
+%
+% calculate volume-weighted average
+% NOTE: axis_depthbnds(1,:) == upper; axis_depthbnds(2,:) == lower bnd
+loc_n    = 0;
+loc_wsum = 0.0; % weighted sum
+loc_sumw = 0.0; % sum of weights ...
+loc_sum  = 0.0;
+for k=n_k:-1:1,
+    for i=1:n_i,
+        for j=1:n_j,
+            if (~isnan(data_out(i,j,k))),
+                loc_n    = loc_n + 1;
+                loc_wsum = loc_wsum + data_out(i,j,k)*(axis_kbnds(2,k) - axis_kbnds(1,k));
+                loc_sumw = loc_sumw + (axis_kbnds(2,k) - axis_kbnds(1,k));
+                loc_sum  = loc_sum  + data_out(i,j,k);
+            end
+        end
+    end
+end
+%
+loc_ben_n    = 0;
+loc_ben_wsum = 0.0; % weighted sum
+loc_ben_sumw = 0.0; % sum of weights ...
+loc_ben_sum  = 0.0;
+for i=1:n_i,
+    for j=1:n_j,
+        if (~isnan(data_out_ben(i,j))),
+            loc_ben_n    = loc_ben_n + 1;
+            loc_ben_wsum = loc_ben_wsum + data_out_ben(i,j);
+            loc_ben_sumw = loc_ben_sumw + 1.0;
+            loc_ben_sum  = loc_ben_sum  + data_out_ben(i,j);
+        end
+    end
+end
+loc_ben_av = loc_ben_wsum/loc_ben_sumw;
+% write to file
+fid = fopen([str_filename '.DIAG.' str_date '.txt'],'w');
+fprintf(fid,'%s\n','##################################################################################');
+fprintf(fid,'\n');
+fprintf(fid,'%s\n',['# of ocean data points    = ',num2str(loc_n)]);
+fprintf(fid,'%s\n',['weighted mean of data     = ',num2str(loc_wsum/loc_sumw)]);
+fprintf(fid,'%s\n',['mean of data              = ',num2str(loc_sum/loc_n)]);
+fprintf(fid,'\n');
+fprintf(fid,'%s\n',['# of benthic data points  = ',num2str(loc_ben_n)]);
+fprintf(fid,'%s\n',['weighted mean of benthic  = ',num2str(loc_ben_wsum/loc_ben_sumw)]);
+fprintf(fid,'%s\n',['mean of benthic data      = ',num2str(loc_ben_sum/loc_ben_n)]);
+fprintf(fid,'\n');
+fprintf(fid,'%s\n','##################################################################################');
+fclose(fid);
 %
 % *********************************************************************** %
 
