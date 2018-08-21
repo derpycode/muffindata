@@ -17,7 +17,11 @@ str_dirin  = pwd;
 str_dirout = pwd;
 % set filename
 str_date = [datestr(date,11), datestr(date,5), datestr(date,7)];
-str_nameout = [str_k1];
+if opt_diag,
+    str_nameout = [str_k1 '.ndepth' num2str(n_depth) '.diag'];
+else
+    str_nameout = [str_k1 '.ndepth' num2str(n_depth)];
+end
 % load k1 and process file
 [grid_k1,grid_mask,imax,jmax] = fun_read_k1(pwd,str_k1,'k1');
 % icreate & nitialzie borders array
