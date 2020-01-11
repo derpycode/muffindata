@@ -34,14 +34,14 @@
 % solutionname = 'La2004.dat';
 % t1 = 55000;
 % t2 = 56000;
-% calc_orbitsML(solutionname,t1,t2)
+% calc_orbits(solutionname,t1,t2)
 %
 % Example #2
 % solutionname = 'La2004.dat';
-% calc_orbitsML(solutionname)
+% calc_orbits(solutionname)
 %
 % Example #3
-% calc_orbitsML()
+% calc_orbits()
 %
 % By Sandra Kirtland Turner (UCR)
 %
