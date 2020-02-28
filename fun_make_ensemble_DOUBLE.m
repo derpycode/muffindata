@@ -48,6 +48,12 @@ function [] = fun_make_ensemble_DOUBLE(STR_TEMPLATE,STR_PARAMS)
 %   (duplicating the vector in the 2nd line is OK (it is not read))
 %
 %   ***********************************************************************
+%   *** HISTORY ***********************************************************
+%   ***********************************************************************
+%
+%   20/02/29: set count of ensemble # to start from 0 (rather than 1)
+%
+%   ***********************************************************************
 
 % *********************************************************************** %
 % *** INITIALIZE PARAMETERS & VARIABLES ********************************* %
@@ -170,6 +176,7 @@ fprintf(fid0, '%s\n', loc_str);
 %
 % *** DOUBLE PARAMETER CHANGES ****************************************** %
 %
+% NOTE: count ensemble # from 0 (rather than 1)
 % loop through all unique parameter modifications
 for n=1:par_vmax(1)
     for m=1:par_vmax(2)
@@ -177,7 +184,7 @@ for n=1:par_vmax(1)
         loc_vn = [n m];
         % copy template
         str_templatefilein  = [str_template];
-        str_templatefileout = [str_date '.' str_file '.' num2str(n) num2str(m)];
+        str_templatefileout = [str_date '.' str_file '.' num2str(n-1) num2str(m-1)];
         copyfile(str_templatefilein,str_templatefileout,'f');
         % open sesame! (file pipe of ensemble member user-config)
         fid = fopen(str_templatefileout, 'a+');
@@ -191,7 +198,7 @@ for n=1:par_vmax(1)
         % write parameters -- loop through all parameters
         for p=1:par_pmax
             % add comment line
-            loc_str = ['# parameter: ' s(p).paramname ' -- default value modified by factor: ' num2str(s(p).vector(loc_vn(s(p).id)))];
+            loc_str = ['# parameter: ' s(p).paramname ' -- default value (' num2str(s(p).defaultvalue) ') modified by factor: ' num2str(s(p).vector(loc_vn(s(p).id)))];
             fprintf(fid, '%s\n', loc_str);
             % add parameter line
             loc_str = [s(p).paramname '=' num2str(s(p).vector(loc_vn(s(p).id))*s(p).defaultvalue)];
@@ -203,7 +210,7 @@ for n=1:par_vmax(1)
         % close file pipe of ensemble member user-config
         fclose(fid);
         % add ensemble key file info
-        loc_str = ['member #' num2str(n) num2str(m) ':'];
+        loc_str = ['member #' num2str(n-1) num2str(m-1) ':'];
         fprintf(fid0, '%s\n', loc_str);
         for p=1:par_pmax
             % add comment line to ensemble key file
