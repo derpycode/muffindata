@@ -8,6 +8,8 @@ function [] = fun_make_ensemble_DOUBLE(STR_TEMPLATE,STR_PARAMS)
 %   creates all the individual user-config files needed for a
 %   2D parameter ensemble
 %   also creates an ensemble description file: '*.KEY.txt'
+%   The resulting ensemble can be submitted by modifying the BASH script:
+%   sub_ens.muffin.sh
 %
 %   STR_TEMPLATE == template filename
 %   STR_PARAMS   == parameter configuration (omitting '.dat' extension)
