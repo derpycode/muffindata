@@ -6,7 +6,7 @@ function [] = make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PLONO,PLAT
 %   *** (3D) + ASCII forcing compatable outputs ***************************
 %   ***********************************************************************
 %
-%   make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PNLON,PNLAT,PVERT)
+%   make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PNLON,PNLAT,PZO,POFF,PMASK)
 %   (equal lat increment grid)
 %   'make_regrid_data2netcdf_GENIE.nc' and takes 7 arguments:
 %
@@ -21,10 +21,10 @@ function [] = make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PLONO,PLAT
 %       NOTE: for isotopes, the units name needs to be '1'
 %   PIMAX [INTEGER] (e.g. 360)
 %   --> the number of increments in longitude
-%   --> e.g. 360 for a 1 degree grid
+%   --> e.g. 36
 %   PJMAX [INTEGER] (e.g. 180)
 %   --> the number of increments in latitude
-%   --> e.g. 180 for a 1 degree grid
+%   --> e.g. 36
 %   PKMAX [INTEGER] (e.g. 16)
 %   --> vertical grid resolution
 %   POFF [INTEGER] (e.g. -260)
@@ -176,7 +176,7 @@ if (exist(str_data_filenamein,'file') == 2),
     data_size = size(data_raw(:,:));
     nmax=data_size(1);
     if (length(find(isnan(data_raw))) > 0),
-        disp(['WARNING: ', 'The data file: ', str_data_filenamein, ' does not contain numeric data in a consistent 4-column (lon,lat,depth,value), space-seperated format, or it contains NaNs. Recommend is to remove NaN containing lines.']);
+        disp(['WARNING: ', 'The data file: ', str_data_filenamein, ' does not contain numeric data in a consistent 4-column (lon,lat,depth,value), space-seperated format, or it contains NaNs. Recommend is to remove NaN containing lines (data=rmmissing(data);).']);
     end
 else
     disp(['ERROR: ', 'File: ', str_data_filenamein, ' does not exist anywhere in the MATLAB directory path.']);
@@ -331,16 +331,19 @@ end
 % NOTE: re-orientate to (j,i) (from (lon,lat))
 % NOTE: data starts in array top LH corner as: (par_grid_lon_offset, -90S)
 % surface
-str_filename = [str_data_filenameout '.SUR'];
 loc_data = data_gridded(:,:,1);
-loc_data = flipud(loc_data');
-plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NOmask'],['data']);
-loc_data = data_mask.*loc_data;
-fprint_2DM(loc_data,data_mask,[str_filename '.dat'],'%14.6e','%14.1f',true,false);
-loc_data(find(loc_data == 0.0)) = loc_nullvalue;
-fprint_2DM(loc_data,[],[str_filename '.NULLmask.dat'],'%14.6e','%14.1f',true,false);
-loc_data = data_mask_nan.*loc_data;
-plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NaNmask'],['data']);
+if ( max(max(loc_data)) > loc_nullvalue)
+    % save surface data
+    str_filename = [str_data_filenameout '.SUR'];
+    loc_data = flipud(loc_data');
+    plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NOmask'],['data']);
+    loc_data = data_mask.*loc_data;
+    fprint_2DM(loc_data,data_mask,[str_filename '.dat'],'%14.6e','%14.1f',true,false);
+    loc_data(find(loc_data == 0.0)) = loc_nullvalue;
+    fprint_2DM(loc_data,[],[str_filename '.NULLmask.dat'],'%14.6e','%14.1f',true,false);
+    loc_data = data_mask_nan.*loc_data;
+    plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NaNmask'],['data']);
+end
 % benthic surface
 % NOTE: k=1 is the surface in the data array indexing ...
 % extract benthic data surface
@@ -373,20 +376,22 @@ for n = 1:nmax,
         n_ben = n_ben+1;
     end
 end
-% save benthic data
-str_filename = [str_data_filenameout '.BEN'];
-loc_data = flipud(loc_data');
-plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NOmask'],['data']);
-loc_data = data_mask.*loc_data;
-fprint_2DM(loc_data,data_mask,[str_filename '.dat'],'%14.6e','%14.1f',true,false);
-loc_data(find(loc_data == 0.0)) = loc_nullvalue;
-fprint_2DM(loc_data,[],[str_filename '.NULLmask.dat'],'%14.6e','%14.1f',true,false);
-loc_data = data_mask_nan.*loc_data;
-plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NaNmask'],['data']); 
-% save benthic count data
-loc_data = flipud(grid_data_count');
-loc_data = data_mask_nan.*loc_data;
-plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.data_cnt'],['data']);    
+if ( max(max(loc_data)) > loc_nullvalue)
+    % save benthic data
+    str_filename = [str_data_filenameout '.BEN'];
+    loc_data = flipud(loc_data');
+    plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NOmask'],['data']);
+    loc_data = data_mask.*loc_data;
+    fprint_2DM(loc_data,data_mask,[str_filename '.dat'],'%14.6e','%14.1f',true,false);
+    loc_data(find(loc_data == 0.0)) = loc_nullvalue;
+    fprint_2DM(loc_data,[],[str_filename '.NULLmask.dat'],'%14.6e','%14.1f',true,false);
+    loc_data = data_mask_nan.*loc_data;
+    plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NaNmask'],['data']);
+    % save benthic count data
+    loc_data = flipud(grid_data_count');
+    loc_data = data_mask_nan.*loc_data;
+    plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.data_cnt'],['data']);
+end
 %
 % *** DIAGNOSTICS ******************************************************* %
 %
