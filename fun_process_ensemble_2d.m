@@ -22,12 +22,14 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR)
 %   NOTE: m must be incremented by 1 for each added variable
 %
 %   \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+%   % atmopsheric pCO2
 %   m = m+1;
 %   data(m).dataname = 'atm_pCO2';
 %   data(m).datacol  = 3;
 %   data(m).scale    = 1.0E6;
 %   data(m).dataunit = '(ppm)';
 %   data(m).minmax   = [180 280];
+%   % atmopsheric pCO2 d13C
 %   m = m+1;
 %   data(m).dataname = 'atm_pCO2_13C';
 %   data(m).datacol  = 3;
@@ -35,55 +37,55 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR)
 %   data(m).dataunit = '(o/oo)';
 %   data(m).minmax   = [-7.0 -6.0];
 %   m = m+1;
-% % global POC export
-% m = m+1;
-% data(m).dataname = 'fexport_POC';
-% data(m).datacol  = 2;
-% data(m).scale    = 12.0E-15;
-% data(m).dataunit = '(PgC yr-1)';
-% data(m).minmax   = [6.0 12.0];
-% % global mean [O2]
-% m = m+1;
-% data(m).dataname = 'ocn_O2';
-% data(m).datacol  = 3;
-% data(m).scale    = 1.0E+6;
-% data(m).dataunit = '(umol kg-1)';
-% data(m).minmax   = [120 180];
-% % AMOC
-% m = m+1;
-% data(m).dataname = 'AMOC strength';
-% data(m).datacol  = 0;
-% data(m).scale    = 1.0;
-% data(m).dataunit = 'Sv';
-% data(m).minmax   = [0 20];
-% % model skill score of global ocean temeprature
-% m = m+1;
-% data(m).dataname = 'ocn_temp';
-% data(m).datacol  = 0;
-% data(m).scale    = 1.0;
-% data(m).dataunit = 'n/a';
-% data(m).minmax   = [0.75 0.85];
-% % model skill score of global ocean salinty
-% m = m+1;
-% data(m).dataname = 'ocn_sal';
-% data(m).datacol  = 0;
-% data(m).scale    = 1.0;
-% data(m).dataunit = 'n/a';
-% data(m).minmax   = [0.45 0.55];
-% % model skill score of global ocean PO4
-% m = m+1;
-% data(m).dataname = 'ocn_PO4';
-% data(m).datacol  = 0;
-% data(m).scale    = 1.0;
-% data(m).dataunit = 'n/a';
-% data(m).minmax   = [0.6 0.7];
-% % model skill score of global ocean O2
-% m = m+1;
-% data(m).dataname = 'ocn_O2';
-% data(m).datacol  = 0;
-% data(m).scale    = 1.0;
-% data(m).dataunit = 'n/a';
-% data(m).minmax   = [0.4 0.6];
+%   % global POC export
+%   m = m+1;
+%   data(m).dataname = 'fexport_POC';
+%   data(m).datacol  = 2;
+%   data(m).scale    = 12.0E-15;
+%   data(m).dataunit = '(PgC yr-1)';
+%   data(m).minmax   = [6.0 12.0];
+%   % global mean [O2]
+%   m = m+1;
+%   data(m).dataname = 'ocn_O2';
+%   data(m).datacol  = 3;
+%   data(m).scale    = 1.0E+6;
+%   data(m).dataunit = '(umol kg-1)';
+%   data(m).minmax   = [120 180];
+%   % AMOC
+%   m = m+1;
+%   data(m).dataname = 'AMOC strength';
+%   data(m).datacol  = 0;
+%   data(m).scale    = 1.0;
+%   data(m).dataunit = 'Sv';
+%   data(m).minmax   = [0 20];
+%   % model skill score of global ocean temeprature
+%   m = m+1;
+%   data(m).dataname = 'ocn_temp';
+%   data(m).datacol  = 0;
+%   data(m).scale    = 1.0;
+%   data(m).dataunit = 'n/a';
+%   data(m).minmax   = [0.75 0.85];
+%   % model skill score of global ocean salinty
+%   m = m+1;
+%   data(m).dataname = 'ocn_sal';
+%   data(m).datacol  = 0;
+%   data(m).scale    = 1.0;
+%   data(m).dataunit = 'n/a';
+%   data(m).minmax   = [0.45 0.55];
+%   % model skill score of global ocean PO4
+%   m = m+1;
+%   data(m).dataname = 'ocn_PO4';
+%   data(m).datacol  = 0;
+%   data(m).scale    = 1.0;
+%   data(m).dataunit = 'n/a';
+%   data(m).minmax   = [0.6 0.7];
+%   % model skill score of global ocean O2
+%   m = m+1;
+%   data(m).dataname = 'ocn_O2';
+%   data(m).datacol  = 0;
+%   data(m).scale    = 1.0;
+%   data(m).dataunit = 'n/a';
+%   data(m).minmax   = [0.4 0.6];
 %   /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 %
 %   ***********************************************************************
@@ -95,8 +97,8 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR)
 % *** initialize ******************************************************** %
 %
 % set ensemble file-string
-str_ensemble = DUM_ENSEMBLE;
-loc_year     = DUM_YEAR;
+str_ensemble = DUM_ENSEMBLE; % ensemble name
+loc_year     = DUM_YEAR;     % time-slice
 % set results directory parameters
 str_dir     = 'cgenie_output';
 str_archive = '.tar.gz';
@@ -110,8 +112,7 @@ str_date = [datestr(date,11), datestr(date,5), datestr(date,7)];
 % *** initialize -- user options **************************************** %
 %
 % user-options for ensemble
-str_ens  = 'run'; % ensemble name
-str_sep  = '.';   % seperator string (if any) between str_ens and ##
+str_sep  = '.';   % seperator string (if any) between str_ensemble and ##
 str_data = '';    % data file name (if any)
 % define ensemble x axis
 % NOTE: the length of the tick label structure defines the size of the 
