@@ -53,15 +53,9 @@ str_date = [datestr(date,11), datestr(date,5), datestr(date,7)];
 % set function name
 str_function = 'plot-cmap';
 % load plotting options
-if isempty(POPT), POPT='plot_fields_settings'; end
+if isempty(POPT), POPT='plot_fields_SETTINGS'; end
 eval(POPT);
-if ~isempty(plot_format), plot_format_old='n'; end
-% plotting paths
-addpath(library_path1);
-if (~plot_format_old),
-    addpath(library_path2);
-    addpath(library_path3);
-end
+if ~isempty(plot_format), plot_format_old=true; end
 % create dummy data
 data = [0:1:10];
 % define color scale name list
@@ -108,7 +102,7 @@ text(0.95,0.50,[str_function, ' : ', str_date],'FontName','Arial','FontSize',10,
 set(gcf,'CurrentAxes',fh(2));
 hold on;
 %
-for n = 1:n_cmap,
+for n = 1:n_cmap
     % define colormap
     cmap = make_cmap(str_cmap(n).cname,plot_n_col);
     colormap(cmap);
@@ -121,7 +115,7 @@ for n = 1:n_cmap,
     set(h,'LineWidth',0.5);
     set(h,'EdgeColor','k');
     % draw color bar rectangles
-    for m = 2:plot_n_col-1,
+    for m = 2:plot_n_col-1
         h = fill(loc_offst + loc_scale*[0.0 0.0 0.5 0.5],[m-1.0 m m m-1.0],cmap(m,:));
         set(h,'LineWidth',0.5);
         set(h,'EdgeColor','k');
@@ -144,7 +138,7 @@ end
 set(gcf,'CurrentAxes',fh(3));
 hold on;
 %
-for n = 1:n_cmap,
+for n = 1:n_cmap
     loc_offst = (n-1)/n_cmap;
     loc_scale = 1.0/n_cmap;
     loc_str = str_cmap(n).cname;
@@ -158,7 +152,7 @@ set(gcf,'CurrentAxes',fh(1));
 str_filename = ['colorscales'];
 str_filename = [str_filename '.' str_date];
 if (plot_format_old)
-    print('-dpsc2', [str_filename, '.ps']);
+    print('-dpsc2', '-bestfit', [str_filename, '.ps']);
 else
     switch plot_format
         case 'png'
