@@ -1,4 +1,4 @@
-function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR)
+function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
 %
 %   ***********************************************************************
 %   *** fun_process_ensemble_2d *******************************************
@@ -10,6 +10,7 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR)
 %   run00,run01,run02,run10,run11,run12
 %   >> fun_process_ensemble_2d('run')
 %   DUM_YEAR == year of model data to extract
+%   DUM_NAME == ensemble name to assign to the output
 %
 %   NOTE: the ensmeble member number consists of 2 digits, 
 %         each between 0 and 9
@@ -99,6 +100,7 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR)
 % set ensemble file-string
 str_ensemble = DUM_ENSEMBLE; % ensemble name
 loc_year     = DUM_YEAR;     % time-slice
+str_name     = DUM_NAME;
 % set results directory parameters
 str_dir     = 'cgenie_output';
 str_archive = '.tar.gz';
@@ -263,11 +265,13 @@ for x=1:xmax
 %             data(n).array(y,x) = data(n).scale*loc_data;
 %             % extract and compare ocean [PO4] to observations
 %             n = n + 1;
+%             n_BESTS(1) = n;
 %             str = plot_fields_biogem_3d_k(loc_str_exp,'worlg4.WOA13_PO4_molkg-1_worlg4.151208.nc','ocn_PO4','PO4',loc_year,1,0,'',1.0E-6,-0.5,0.5,40,'','plot_fields_SETTINGS_ANOM',[loc_str_exp '.PO4.AMON']);
 %             loc_data = str.statm_m;
 %             data(n).array(y,x) = data(n).scale*loc_data;
 %             % extract and compare ocean [O2] to observations
 %             n = n + 1;
+%             n_BESTS(2) = n;
 %             str = plot_fields_biogem_3d_k(loc_str_exp,'worlg4.WOA13_O2_molkg-1_worlg4.151208.nc','ocn_O2','O2',loc_year,1,0,'',1.0E-6,-20.0,20.0,40,'','plot_fields_SETTINGS_ANOM',[loc_str_exp '.O2.AMON']);
 %             loc_data = str.statm_m;
 %             data(n).array(y,x) = data(n).scale*loc_data;
@@ -308,7 +312,7 @@ for n=1:n_par
         end
     end
     % construct filename and create plot
-    struct_plot.filename = [str_ensemble '.' data(n).dataname '.' num2str(data(n).datacol)];
+    struct_plot.filename = [str_name '.' data(n).dataname '.' num2str(data(n).datacol)];
 %     % AUTOSCALE
 %     plot_2dgridded2(data(n).array,[],'',struct_plot);
     % PRESCRIBED SCALE
@@ -317,10 +321,90 @@ for n=1:n_par
     % save data
     % NOTE: y-axis is opposite to as displayed in the plot 
     %      (counting rows down)
-    fprint_2DM(data(n).array,[],[struct_plot.filename '.dat'],'%8.3f','%8.3f',true,false);
+    fprint_2DM(data(n).array,[],[struct_plot.filename '.dat'],'%10.4f','%10.4f',true,false);
 end
 %
 % *********************************************************************** %
+%
+% *********************************************************************** %
+% *** ANALYSE BEST(S) *************************************************** %
+% *********************************************************************** %
+%
+for n=1:length(n_BESTS)
+    %
+    n_BEST = n_BESTS(n);
+    %
+    % *** find best ensemble member ************************************* %
+    %
+    mss_BEST = max(max(data(n_BEST).array)); % best model skill score
+    I = find(data(n_BEST).array == mss_BEST);
+    [n_y,n_x] = ind2sub([ymax xmax],I);
+    %
+    % *** print best stats ********************************************** %
+    %
+    fid = fopen([str_name '.' data(n_BEST).dataname '.' num2str(n_x-1) num2str(n_y-1) '.STATS.txt'], 'wt');
+    fprintf(fid, '\n');
+    fprintf(fid, '=== MSS STATS SUMMARY === \n');
+    fprintf(fid, '\n');
+    fprintf(fid, 'Best (x,y) : %d %d \n', n_x,n_y);
+    fprintf(fid, '(ensemble notation: .%d%d ) \n', n_x-1,n_y-1);
+    fprintf(fid, '\n');
+    fprintf(fid, '------------------------- \n');
+    for n=1:n_par
+        fprintf(fid, [data(n).dataname ' = %8.4f \n'], data(n).array(n_y,n_x));
+    end
+    fprintf(fid, '------------------------- \n');
+    fprintf(fid, 'BEST: \n');
+    fprintf(fid, [data(n_BEST).dataname ' = %8.4f \n'], data(n_BEST).array(n_y,n_x));
+    fprintf(fid, '------------------------- \n');
+    fprintf(fid, '\n');
+    fprintf(fid, '========================= \n');
+    fprintf(fid, '\n');
+    fclose(fid);
+    %
+    % *** prepare results directory ************************************* %
+    %
+    % re-create experiment name
+    loc_str_exp = [str_ensemble '.' num2str(n_x-1) num2str(n_y-1)];
+    % test for occurrence of tar.gz extension
+    if exist([str_dir '/' loc_str_exp],'dir'),
+        loc_flag = false;
+    elseif exist([str_dir '/' [loc_str_exp str_archive]],'file'),
+        disp(['    UN-PACKING ...']);
+        untar([str_dir '/' [loc_str_exp str_archive]],str_dir);
+        loc_flag = true;
+    else
+        % ERROR
+        disp([' ** ERROR: Cannot find either results directory or archives file of experiment: ' loc_str_exp]);
+        disp([' ']);
+        return;
+    end
+    %
+    % *** analyse ******************************************************* %
+    %
+    loc_str_name = [str_name '.' num2str(n_x-1) num2str(n_y-1)];
+%     % PO4, O2
+%     plot_fields_biogem_3d_k(loc_str_exp,'worjh2.p_an.200709.nc','ocn_PO4','p_an',loc_year,1,16,'',1.0E-6,-0.5,0.5,40,'','plot_fields_SETTINGS_ANOM',[loc_str_name '.k.PO4.ANOM.SUR']);
+%     plot_fields_biogem_3d_i(loc_str_exp,'worjh2.p_an.200709.nc','ocn_PO4','p_an',loc_year,1,0,'mask_worjh2_AtlanticALL.dat',1.0E-6,-0.5,0.5,40,'','plot_fields_SETTINGS_ANOM',[loc_str_name '.i.PO4.ANOM.ATLALL']);
+%     plot_fields_biogem_3d_i(loc_str_exp,'worjh2.p_an.200709.nc','ocn_PO4','p_an',loc_year,1,0,'mask_worjh2_PacificALL.dat',1.0E-6,-0.5,0.5,40,'','plot_fields_SETTINGS_ANOM',[loc_str_name '.i.PO4.ANOM.PACALL']);
+%     plot_fields_biogem_3d_i(loc_str_exp,'worjh2.p_an.200709.nc','ocn_PO4','p_an',loc_year,1,0,'mask_worjh2_IndianALL.dat',1.0E-6,-0.5,0.5,40,'','plot_fields_SETTINGS_ANOM',[loc_str_name '.i.PO4.ANOM.INDALL']);
+%     %plot_fields_biogem_3d_k(loc_str_exp,'worjh2.o_an.200709.nc','ocn_O2','o_an',loc_year,1,16,'',1.0E-6,-20.0,20.0,40,'','plot_fields_SETTINGS_ANOM',[loc_loc_str_name '.k.O2.ANOM.SUR']);
+%     plot_fields_biogem_3d_i(loc_str_exp,'worjh2.o_an.200709.nc','ocn_O2','o_an',loc_year,1,0,'mask_worjh2_AtlanticALL.dat',1.0E-6,-50.0,50.0,40,'','plot_fields_SETTINGS_ANOM',[loc_str_name '.i.O2.ANOM.ATLALL']);
+%     plot_fields_biogem_3d_i(loc_str_exp,'worjh2.o_an.200709.nc','ocn_O2','o_an',loc_year,1,0,'mask_worjh2_PacificALL.dat',1.0E-6,-50.0,50.0,40,'','plot_fields_SETTINGS_ANOM',[loc_str_name '.i.O2.ANOM.PACALL']);
+%     plot_fields_biogem_3d_i(loc_str_exp,'worjh2.o_an.200709.nc','ocn_O2','o_an',loc_year,1,0,'mask_worjh2_IndianALL.dat',1.0E-6,-50.0,50.0,40,'','plot_fields_SETTINGS_ANOM',[loc_str_name '.i.O2.ANOM.INDALL']);
+    %
+    % *** clean up ****************************************************** %
+    %
+    % remote unpacked dir
+    if loc_flag
+        disp(['    KEEP UNPACKED BEST RUN!']);
+        %     disp(['    REMOVE DIR']);
+        %     rmdir([str_dir '/' loc_str_exp],'s');
+    end
+    %
+    % ******************************************************************* %
+    %
+end
 %
 % *********************************************************************** %
 % *** END *************************************************************** %
