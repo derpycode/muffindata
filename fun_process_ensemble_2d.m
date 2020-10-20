@@ -110,6 +110,8 @@ str_ts_ext  = '.res';
 struct_dir = dir([str_dir '/' str_ensemble '*']);
 % set date
 str_date = [datestr(date,11), datestr(date,5), datestr(date,7)];
+% create empty 'best' vector
+n_BESTS = [];
 %
 % *** initialize -- user options **************************************** %
 %
