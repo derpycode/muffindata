@@ -79,6 +79,7 @@ function [] = make_regrid_WOA2GENIE(PZI,PD,PNAME,PLNAME,PUNITS,PSCALE,PIMAX,PJMA
 %             added check for mask dimensions
 %   16/02/29: moved the mask dim filter to the EXAMPLE (prior to cirshift)
 %   18/02/09: added some diagnostics
+%   20/11/05: fixed bug in converting grid resolution indices
 %
 %   ***********************************************************************
 
@@ -307,7 +308,7 @@ data_lo(find(data_lo >= par_data_null))  = NaN;
 data_lo(find(data_lo <= -par_data_null)) = NaN;
 % calculate hi grid cell areas
 for lat=1:n_lat_hi,
-    loc_area_hi(:,lat) = 2.0*pi*(const_rEarth^2)*( sin(pi*((-90+lat/par_regrid_scalar)/180)) - sin(pi*((-90+lat/par_regrid_scalar-1)/180)) )/(par_regrid_scalar*n_lon_lo);
+    loc_area_hi(:,lat) = 2.0*pi*(const_rEarth^2)*( sin(pi*((-90+lat/par_regrid_scalar)/180)) - sin(pi*((-90+lat/par_regrid_scalar-1)/180)) )/(par_regrid_scalar*par_regrid_scalar)/n_lon_lo;
 end
 % % plot something
 % if (opt_plot_base),
@@ -330,10 +331,10 @@ for depth=1:n_depth,
     % NOTE: commented out are non-area-weighted alternatives
     for i=1:n_i,
         for j=1:n_j,
-            loc_lon_min = par_regrid_scalar*int16(axis_ibnds(1,i) + 0.5);
-            loc_lon_max = par_regrid_scalar*int16(axis_ibnds(2,i) - 0.5);
-            loc_lat_min = par_regrid_scalar*int16(axis_jbnds(1,j) + 90.0 + 0.5);
-            loc_lat_max = par_regrid_scalar*int16(axis_jbnds(2,j) + 90.0 - 0.5);
+            loc_lon_min = 1 + par_regrid_scalar*int16(axis_ibnds(1,i));
+            loc_lon_max = par_regrid_scalar*int16(axis_ibnds(2,i));
+            loc_lat_min = 1 + par_regrid_scalar*int16(axis_jbnds(1,j) + 90.0);
+            loc_lat_max = par_regrid_scalar*int16(axis_jbnds(2,j) + 90.0);
             loc_data = loc_data_hi(loc_lon_min:loc_lon_max,loc_lat_min:loc_lat_max);
             loc_area = loc_area_hi(loc_lon_min:loc_lon_max,loc_lat_min:loc_lat_max);
             loc_data_nan = find(isnan(loc_data));
