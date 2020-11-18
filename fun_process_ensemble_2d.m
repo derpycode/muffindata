@@ -222,26 +222,34 @@ for x=1:xmax
         %
         % *** extract specific variables ******************************** %
         %
+        % NOTE: this code simply finds the end of the file:
+        %       loc_data = loc_array(end,data(n).datacol);
+        %       otherwise, the specified (time-slice) year is looked for
+        %       and incomplete/crashed/missing runs can be dealt with       
         for n=1:n_par_ts
             % set filename
             loc_str_file = [str_ts_root '_' data(n).dataname str_ts_ext];
             % test for file
             if exist([str_dir '/' loc_str_exp '/biogem/' loc_str_file],'file')
                 % read data
+                %%%loc_data = loc_array(end,data(n).datacol);
                 loc_array = load([str_dir '/' loc_str_exp '/biogem/' loc_str_file],'ascii');
-                %%%loc_data_i = find(loc_array(:,1) == data(n).year);
-                %%%loc_data = loc_array(loc_data_i,data(n).datacol);
-                loc_data = loc_array(end,data(n).datacol);
-                % test for data difference request
-                if (isfield(data,'datacolD'))
-                    if (~isempty(data(n).datacolD))
-                        loc_data = loc_data - loc_array(loc_data_i,data(n).datacolD);
+                loc_data_i = find(loc_array(:,1) == data(n).year);
+                if ~isempty(loc_data_i)
+                    loc_data = loc_array(loc_data_i,data(n).datacol);
+                    % test for data difference request
+                    if (isfield(data,'datacolD'))
+                        if (~isempty(data(n).datacolD))
+                            loc_data = loc_data - loc_array(loc_data_i,data(n).datacolD);
+                        end
                     end
+                    % write data
+                    data(n).array(y,x) = data(n).scale*loc_data;
+                else
+                    data(n).array(y,x) = NaN;
                 end
-                % write data
-                data(n).array(y,x) = data(n).scale*loc_data;
             else
-                % NOTHING
+                data(n).array(y,x) = NaN;
             end
         end
         %
