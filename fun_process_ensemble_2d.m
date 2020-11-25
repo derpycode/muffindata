@@ -8,7 +8,7 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
 %   (omitting the numerical code of individual ensemble members)
 %   e.g. for the 2x3 (6 member) ensemble:
 %   run00,run01,run02,run10,run11,run12
-%   >> fun_process_ensemble_2d('run')
+%   >> fun_process_ensemble_2d('run',9999.5,'myensemble')
 %   DUM_YEAR == year of model data to extract
 %   DUM_NAME == name to assign to the output files
 %               (which could be different to and more meaningful than
