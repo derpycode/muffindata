@@ -51,8 +51,7 @@ function [] = fun_make_ensemble_2d(STR_TEMPLATE,STR_PARAMS)
 %
 %   parameter configuration file contents:
 %
-%   1 go_0 1.0E-3 0.0 10.0 100.0 -99
-%   2 ea_0 1.0E6  1.0 -999
+%   1 go_0 1.0E-3 0.0 10.0 100.0 -999
 %
 %   is as example #1, but only varying the 1st parameter
 %   to create a 1-D ensemble
