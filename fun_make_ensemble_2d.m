@@ -42,18 +42,28 @@ function [] = fun_make_ensemble_2d(STR_TEMPLATE,STR_PARAMS)
 %   parameter configuration file contents:
 %
 %   1 go_0 1.0E-3 0.0 10.0 100.0 -99
-%   1 go_9 1.0E-9 -99
+%   1 go_9 1.0E-9 1.0 2.0 3.0 -99
 %   2 ea_0 1.0E6  1.0 0.8 0.6 0.4 0.2 0.0 -999
 %
 %   is as example #1, but also modifying go_9 at the same time as go_0
-%   (the second line could also be: 1 go_9 1.0E-9 -- omitting the line end)
-%   (duplicating the vector in the 2nd line is OK (it is not read))
+%
+%   EXAMPLE 3
+%
+%   parameter configuration file contents:
+%
+%   1 go_0 1.0E-3 0.0 10.0 100.0 -99
+%   2 ea_0 1.0E6  1.0 -999
+%
+%   is as example #1, but only varying the 1st parameter
+%   to create a 1-D ensemble
 %
 %   ***********************************************************************
 %   *** HISTORY ***********************************************************
 %   ***********************************************************************
 %
 %   20/02/29: set count of ensemble # to start from 0 (rather than 1)
+%   20/11/25: updated to allow independent additional 1st or 2nd
+%             axis parameters
 %
 %   ***********************************************************************
 
@@ -89,7 +99,7 @@ while go_lines
     v = [];
     % read vector elements ...
     % ... but only if the parameter ID is unique (not the same a previous)
-    if (cell2mat(C(1)) > loc_id),
+    if (cell2mat(C(1)) > loc_id)
         while go_columns
             loc_C = textscan(fid, '%f', 1, 'CommentStyle', '%');
             if (cell2mat(loc_C) == -99)
@@ -105,14 +115,26 @@ while go_lines
         end
         loc_unique = true;
     else
-        % skip rest of line
-        textscan(fid, '%*[^\n]', 1);
-        % duplicate vector from previous line
-        v = s(nl).vector;
+        while go_columns
+            loc_C = textscan(fid, '%f', 1, 'CommentStyle', '%');
+            if (cell2mat(loc_C) == -99)
+                go_columns = false;
+                nl = nl + 1;
+            else
+                v = [v cell2mat(loc_C)];
+            end
+        end
         loc_unique = false;
-        % reset loop and update line count
-        go_columns = false;
-        nl = nl + 1;
+% *** OLD VERSION *********************************************************
+%         % skip rest of line
+%         textscan(fid, '%*[^\n]', 1);
+%         % duplicate vector from previous line
+%         v = s(nl).vector;
+%         loc_unique = false;
+%         % reset loop and update line count
+%         go_columns = false;
+%         nl = nl + 1;
+% *********************************************************************** %
     end
     % update structure data
     s(nl).id = cell2mat(C(1));
@@ -165,10 +187,8 @@ for n=1:par_pmax
 end
 loc_str = [' ***********************************************************'];
 fprintf(fid0, '%s\n', loc_str);
-% fprintf(fid0, '\n', loc_str);
 loc_str = ['     individual ensemble members:'];
 fprintf(fid0, '%s\n', loc_str);
-% fprintf(fid0, '\n', loc_str);
 %
 % *********************************************************************** %
 %
