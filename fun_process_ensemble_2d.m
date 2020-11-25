@@ -10,7 +10,9 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
 %   run00,run01,run02,run10,run11,run12
 %   >> fun_process_ensemble_2d('run')
 %   DUM_YEAR == year of model data to extract
-%   DUM_NAME == ensemble name to assign to the output
+%   DUM_NAME == name to assign to the output files
+%               (which could be different to and more meaningful than
+%                e.g. DUM_ENSEMBLE)
 %
 %   NOTE: the ensmeble member number consists of 2 digits, 
 %         each between 0 and 9
@@ -88,6 +90,14 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
 %   data(m).dataunit = 'n/a';
 %   data(m).minmax   = [0.4 0.6];
 %   /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+%
+%   ***********************************************************************
+%   *** HISTORY ***********************************************************
+%   ***********************************************************************
+%
+%   20/11/25: updated 'help' :o)
+%             added ability to pick up missing ensemble members
+%             + pick out specific time rather than just end of time-series
 %
 %   ***********************************************************************
 
