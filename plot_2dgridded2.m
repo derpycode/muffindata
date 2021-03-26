@@ -47,6 +47,8 @@ function [] = plot_2dgridded2(PDATAIN,PDATALIMS,PDATACOL,OSTRUCTTEXT)
 %             *** VERSION 0.92 ********************************************
 %   19/01/06: bug fix of defalt plotting parameters
 %             *** VERSION 0.93 ********************************************
+%   21/03/26: changed color-scale default
+%             *** VERSION 0.94 ********************************************
 %
 %   ***********************************************************************
 
@@ -57,7 +59,7 @@ function [] = plot_2dgridded2(PDATAIN,PDATALIMS,PDATACOL,OSTRUCTTEXT)
 % *** INITIALIZE ******************************************************** %
 %
 % set version!
-par_ver = 0.93;
+par_ver = 0.94;
 % set function name
 str_function = mfilename;
 str_function(find(str_function(:)=='_')) = '-';
@@ -83,7 +85,7 @@ end
 data_in   = PDATAIN;
 data_lims = PDATALIMS;
 data_col  = PDATACOL;
-if ~exist('OSTRUCTTEXT','var'),
+if ~exist('OSTRUCTTEXT','var')
     str_title    = 'hello';
     str_filename = ['myplot' str_date];
 end
@@ -106,8 +108,8 @@ color_w = [1.00 1.00 1.00];
 % set n colors
 c_max =256;
 % set color scale
-if isempty(data_col),
-    colorbar_name = 'parula';
+if isempty(data_col)
+    colorbar_name = 'inferno';
 else
     colorbar_name = data_col;
 end
