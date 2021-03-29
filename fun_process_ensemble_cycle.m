@@ -1,4 +1,4 @@
-function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
+function [] = fun_process_ensemble_2d_cycle(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
 %
 %   ***********************************************************************
 %   *** fun_process_ensemble_2d *******************************************
@@ -164,10 +164,9 @@ str_data = '';    % data file name (if any)
 % NOTE: for a 1-D (vertical) ensemble, set a single dummy label, e.g.
 %       struct_plot.xticks = {'1D'};
 % \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-struct_plot.xticks = {'open'; 'closed'};
 % /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 % define x axis label
-struct_plot.xlabel = 'Panama gateway';
+struct_plot.xlabel = 'XLABEL';
 % define x axis tick label angle
 struct_plot.xtickangle = 45.0;
 %
@@ -179,10 +178,9 @@ struct_plot.xtickangle = 45.0;
 % NOTE: for a 1-D (vertical) ensemble, set a single dummy label, e.g.
 %       struct_plot.xticks = {'1D'};
 % \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-struct_plot.yticks = {'0.0'; '2.5'; '4.5'; '7.5'; '10.0'; '12.5'; '15.0'};
 % /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 % define y axis label
-struct_plot.ylabel = 'Age (Ma)';
+struct_plot.ylabel = 'YLABEL)';
 %
 % initialize count
 m = 0;
@@ -192,20 +190,6 @@ m = 0;
 % -- see help for examples
 % NOTE: remember that m must be incremented by 1 for each added variable
 % \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-% atmopsheric pCO2
-m = m+1;
-data(m).dataname = 'atm_pCO2';
-data(m).datacol  = 3;
-data(m).scale    = 1.0E6;
-data(m).dataunit = 'pCO_2 (ppm)';
-data(m).minmax   = [0 1500];
-% atmopsheric pCO2 d13C
-m = m+1;
-data(m).dataname = 'atm_pCO2_13C';
-data(m).datacol  = 3;
-data(m).scale    = 1.0;
-data(m).dataunit = 'pCO_2 \delta^{13}C (o/oo)';
-data(m).minmax   = [-7.0 -5.5];
 % /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 % 
 % set number of time-series data
