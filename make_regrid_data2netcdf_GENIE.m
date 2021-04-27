@@ -8,7 +8,7 @@ function [] = make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PLONO,PLAT
 %
 %   make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PNLON,PNLAT,PZO,POFF,PMASK)
 %   (equal lat increment grid)
-%   'make_regrid_data2netcdf_GENIE.nc' and takes 7 arguments:
+%   'make_regrid_data2netcdf_GENIE.nc' and takes 9 arguments:
 %
 %   PDATA [STRING] (e.g. 'data_d30Si.dat')
 %   --> the dataset name (including extension)
@@ -19,12 +19,10 @@ function [] = make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PLONO,PLAT
 %   PUNITS [STRING] (e.g., '1')
 %   --> data units
 %       NOTE: for isotopes, the units name needs to be '1'
-%   PIMAX [INTEGER] (e.g. 360)
+%   PIMAX [INTEGER] (e.g. 36)
 %   --> the number of increments in longitude
-%   --> e.g. 36
-%   PJMAX [INTEGER] (e.g. 180)
+%   PJMAX [INTEGER] (e.g. 36)
 %   --> the number of increments in latitude
-%   --> e.g. 36
 %   PKMAX [INTEGER] (e.g. 16)
 %   --> vertical grid resolution
 %   POFF [INTEGER] (e.g. -260)
@@ -33,17 +31,15 @@ function [] = make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PLONO,PLAT
 %   --> optional grid mask (the grid 'k1' topo file)
 %
 %   Example
-%           make_regrid_data2netcdf_GENIE('data_d30Si.dat','d30Si','observed water column silicon isotope value in units of per mil','1',360,180,'WOA');
+%           make_regrid_data2netcdf_GENIE('data_d30Si.dat','d30Si','observed water column silicon isotope value in units of per mil','1',36,36,16,-260.0,'');
 %           will grid the d30Si data in file: 'data_d30Si.dat'
-%           to a WOA-compatable grid (1 degree lon, lat)
+%           to a 36x36x16 GENIE grid
 %
 %   NOTE: opt_benthic controls an important behavior:
 %         false => the data is re-gridded straight, and any data lying
 %                  deeper than the deepest depth at a particular grid point
 %                  is ignore
 %         true  => deeper data is enfolded into a benthic mean 
-%         BUT, data deeper than the deepest grid level (anywhere)
-%              is regrided regardless
 %
 %   ***********************************************************************
 %   *** HISTORY ***********************************************************
@@ -56,6 +52,8 @@ function [] = make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PLONO,PLAT
 %   17/12/29: changed default behavior to using data deeper than the
 %             maximum depth grid point depth
 %   17/12/30: various benthic bug-fixes
+%   21/04/27: cleaned up comments, IF commas
+%             upgraded data read (with fun_read_file)
 %
 %   ***********************************************************************
 
@@ -65,7 +63,7 @@ function [] = make_regrid_data2netcdf_GENIE(PDATA,PNAME,PLNAME,PUNITS,PLONO,PLAT
 %
 % *** START ************************************************************* %
 % 
-disp(['START [make_regrid_data2netcdf_GENIE] >>>'])
+disp('START [make_regrid_data2netcdf_GENIE] >>>')
 %
 % *** dummy variable processing ***************************************** %
 %
@@ -83,7 +81,7 @@ str_mask_filename = PMASK;
 if isempty(str_dataname), str_dataname = str_data_filename; end
 if isempty(str_dataname_long), str_dataname_long = str_data_filename; end
 if isempty(str_data_units), str_data_units = 'n/a'; end
-if ~isempty(str_mask_filename),
+if ~isempty(str_mask_filename)
     str_data_filenameout = [str_data_filenamein '_GENIE.' str_mask_filename];
 else
     str_data_filenameout = [str_data_filenamein '_GENIE'];
@@ -131,10 +129,10 @@ loc_axis_Dbnds = loc_axis_Dbnds';
 %      (i.e. latitude as columns, counting from top to bottom)
 %      [remember in MATLAB :: (rows,columns) !]
 % NOTE: process k1 format
-if ~isempty(str_mask_filename),
+if ~isempty(str_mask_filename)
     loc_data = load(str_mask_filename,'-ascii');
     % test for extended k1 format
-    if (size(loc_data) == [n_lon+2 n_lat+2]),
+    if (size(loc_data) == [n_lon+2 n_lat+2])
         loc_data(1,:)   = [];
         loc_data(end,:) = [];
         loc_data(:,1)   = [];
@@ -142,7 +140,7 @@ if ~isempty(str_mask_filename),
     end
     data_grid = loc_data;
     % determined whether k1 or mask
-    if (max(max(loc_data)) > 1.0),
+    if (max(max(loc_data)) > 1.0)
         data_mask = loc_data;
         data_mask(find(data_mask <= n_D)) = 1.0;
         data_mask(find(data_mask >= 90))  = 0.0;
@@ -168,16 +166,47 @@ plot_2dgridded(flipud(data_mask),2.0,'',str_filename,['mask']);
 %
 % *** load data ********************************************************* %
 %
-if (exist(str_data_filenamein,'file') == 2),
-    fid = fopen(str_data_filenamein);
-    C = textscan(fid, '%f %f %f %f %s', 'CommentStyle', '%');
-    data_raw = cell2mat(C(1:4));
-    fclose(fid);
-    data_size = size(data_raw(:,:));
-    nmax=data_size(1);
-    if (length(find(isnan(data_raw))) > 0),
-        disp(['WARNING: ', 'The data file: ', str_data_filenamein, ' does not contain numeric data in a consistent 4-column (lon,lat,depth,value), space-seperated format, or it contains NaNs. Recommend is to remove NaN containing lines (data=rmmissing(data);).']);
+if (exist(str_data_filenamein,'file') == 2)
+    % read data(!)
+    [file_data] = fun_read_file(str_data_filenamein);
+    % extract data cell array, and vector format
+    cdata    = file_data.cdata;
+    v_format = file_data.vformat;
+    % determine number of rows and columns
+    n_rows    = length(cdata);
+    n_columns = length(v_format);
+    % parse call array data
+    % NOTE: create dummay (blank space) labels if no label in format
+    % NOTE: set flag for a valid format
+    flag_format = false;
+    switch n_columns
+        case 4
+            if (sum(v_format(1:4)) == 0)
+                % lon, lat, depth, value
+                data_raw = cell2mat(cdata(:,1:4));
+                % flag for a valid format
+                flag_format      = true;
+            end
+        case 5
+            if ((sum(v_format(1:4)) == 0))
+                % lon, lat, depth, value, (LABEL)
+                data_raw = cell2mat(cdata(:,1:4));
+                % flag for a valid format
+                flag_format      = true;
+            end
+        otherwise
+            % (caught by the default of ~flag_format)
     end
+    if (~flag_format)
+        disp([' ']);
+        disp([' * ERROR: Data format not recognized:']);
+        disp(['   Number of data columns found == ' num2str(n_columns)']);
+        disp(['   Columns must be: comma/tab/space-separated.']);
+        disp([' ']);
+        fclose(fid);
+        return;
+    end
+    nmax = n_rows;
 else
     disp(['ERROR: ', 'File: ', str_data_filenamein, ' does not exist anywhere in the MATLAB directory path.']);
     return;
@@ -187,35 +216,15 @@ diag_data_n_raw = nmax;
 %
 % *** filter data ******************************************************* %
 %
-% % option:
-% % remove any data deeper that the bottom of the depth grid and update nmax
-% % *or*
-% % set to max_D
-% n = 1;
-% while (n <= nmax),
-%     if (data_raw(n,3) > max_D),
-%         if opt_benthic,
-%             data_raw(n,3) = max_D;
-%             n = n + 1;           
-%         else 
-%             data_raw(n,:) = [];
-%             nmax = nmax - 1;
-%         end
-%     else
-%         n = n + 1;
-%     end
-% end
-% % move anything exactly at the bottom, slightly shallower ...
-% data_raw(find(data_raw(:,3)==max_D),3) = max_D - 0.001;
 % filter lon,lat values
-for n = 1:nmax,
+for n = 1:nmax
     if (data_raw(n,1) < par_grid_lon_offset), data_raw(n,1) = data_raw(n,1) + 360.0; end
     if (data_raw(n,1) >= (par_grid_lon_offset + 360.0)), data_raw(n,1) = data_raw(n,1) - 360.0; end
-    if ( (data_raw(n,2) > 90.0) || (data_raw(n,2) < -90.0) ),
+    if ( (data_raw(n,2) > 90.0) || (data_raw(n,2) < -90.0) )
         disp(['ERROR: ', 'Something odd with the latitude values in file: ', str_data_filenamein, ' -- maybe latitude is not the 2nd data column as it should be?']);
         return;
     end
-    if (data_raw(n,3) < 0.0),
+    if (data_raw(n,3) < 0.0)
         disp(['ERROR: ', 'Something odd with the depth values in file: ', str_data_filenamein, ' -- maybe depth is given as a negative height or depth is is not the 3rd data column as it should be?']);
         return;
     end
@@ -238,7 +247,7 @@ data_gridded_2Dcount = zeros(n_lon,n_lat);
 %       lat < lat_edge(n+1)
 % NOTE: deal with special cases of lon or lat grid boundary values
 % NOTE: remember, the k grid vector is counted with 1 == surface
-for n = 1:nmax,
+for n = 1:nmax
     loc_lon_n = intersect(find(data_raw(n,1)>=loc_axis_lonedge(:)),find(data_raw(n,1)<loc_axis_lonedge(:))-1);
     if (abs(data_raw(n,1)) == abs(par_grid_lon_offset)), loc_lon_n = 1; end
     loc_lat_n = intersect(find(data_raw(n,2)>=loc_axis_latedge(:)),find(data_raw(n,2)<loc_axis_latedge(:))-1);
@@ -246,7 +255,7 @@ for n = 1:nmax,
     if (data_raw(n,2) == 90),    loc_lat_n = n_lat; end
     loc_D_n   = intersect(find(data_raw(n,3)>=loc_axis_Dedge(:)),find(data_raw(n,3)<loc_axis_Dedge(:))-1);
     if (data_raw(n,3) >= max_D), loc_D_n = n_D; end
-    if (isempty(loc_lon_n*loc_lat_n*loc_D_n)),
+    if (isempty(loc_lon_n*loc_lat_n*loc_D_n))
         disp(['ERROR: ', 'Failed to regrid ... check lon,lat values and/or grid resolution choice. Error info:']);
         disp(['n = ',num2str(n),' : ',num2str(data_raw(n,4)),' @ ','(',num2str(data_raw(n,1)),',',num2str(data_raw(n,2)),',',num2str(data_raw(n,3)),')',' == ','(',num2str(loc_lon_n),',',num2str(loc_lat_n),',',num2str(loc_D_n),')']);
         return;
@@ -256,11 +265,11 @@ for n = 1:nmax,
 end
 %
 % make conform to topo:
-% move deeper depth levels that local deepest level, to local deepest level
+% move deeper depth levels than local deepest level, to local deepest level
 % NOTE: k=1 is the surface in the data array indexing ...
 loc_grid = fliplr(data_grid');
 n = 1;
-while (n <= nmax),
+while (n <= nmax)
     % extract data from data vector
     loc_lon_n = data_vector(n,1);
     loc_lat_n = data_vector(n,2);
@@ -271,12 +280,12 @@ while (n <= nmax),
     % extract local grid depth level
     loc_D_nmax = loc_grid(loc_lon_n,loc_lat_n);
     % test for land ELSE cell depth index value < grid value 
-    if (loc_D_nmax >= 90),
+    if (loc_D_nmax >= 90)
         % remove data point
         data_vector(n,:) = [];
         nmax = nmax - 1;
-    elseif (loc_D_n < loc_D_nmax),
-        if opt_benthic,
+    elseif (loc_D_n < loc_D_nmax)
+        if opt_benthic
             % set depth level equal to deepest level at that grid point
             data_vector(n,3) = n_D - loc_D_nmax + 1;
             n = n + 1;
@@ -295,13 +304,13 @@ diag_data_n_valid = nmax;
 % average data
 % NOTE: remove duplicate locations (having added the value from there to the running average)
 n = 1;
-while (n <= nmax),
+while (n <= nmax)
     loc_coordinate = data_vector(n,1:3);
     m = n + 1;
     n_dup = 0;
-    while (m <= nmax),
+    while (m <= nmax)
         %disp(['n = ',num2str(n),' : ','m = ',num2str(m)])
-        if (data_vector(m,1:3) == loc_coordinate),
+        if (data_vector(m,1:3) == loc_coordinate)
             %disp(['Duplicate @ ','n = ',num2str(n),', ','m = ',num2str(m)])
             n_dup = n_dup + 1;
             data_vector(n,4) = (n_dup*data_vector(n,4) + data_vector(m,4))/(n_dup + 1);
@@ -318,7 +327,7 @@ end
 diag_data_n = nmax;
 %
 % populate 3D grid
-for n = 1:nmax,
+for n = 1:nmax
     loc_lon_n = data_vector(n,1);
     loc_lat_n = data_vector(n,2);
     loc_D_n   = data_vector(n,3);
@@ -336,13 +345,13 @@ if ( max(max(loc_data)) > loc_nullvalue)
     % save surface data
     str_filename = [str_data_filenameout '.SUR'];
     loc_data = flipud(loc_data');
-    plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NOmask'],['data']);
+    plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NOmask'],'data');
     loc_data = data_mask.*loc_data;
     fprint_2DM(loc_data,data_mask,[str_filename '.dat'],'%14.6e','%14.1f',true,false);
     loc_data(find(loc_data == 0.0)) = loc_nullvalue;
     fprint_2DM(loc_data,[],[str_filename '.NULLmask.dat'],'%14.6e','%14.1f',true,false);
     loc_data = data_mask_nan.*loc_data;
-    plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NaNmask'],['data']);
+    plot_2dgridded(flipud(loc_data),loc_nullvalue,'',[str_filename '.NaNmask'],'data');
 end
 % benthic surface
 % NOTE: k=1 is the surface in the data array indexing ...
@@ -352,7 +361,7 @@ loc_grid = fliplr(data_grid');
 grid_data_count = zeros(n_lon,n_lat);
 n_sur = 0;
 n_ben = 0;
-for n = 1:nmax,
+for n = 1:nmax
     % extract data from data vector
     loc_lon_n = data_vector(n,1);
     loc_lat_n = data_vector(n,2);
@@ -366,11 +375,11 @@ for n = 1:nmax,
     loc_D_nmax = loc_grid(loc_lon_n,loc_lat_n);
     loc_D_nmax = n_D - loc_D_nmax + 1;
     % count surface grid points
-    if (loc_D_n == 1),
+    if (loc_D_n == 1)
         n_sur = n_sur+1;
     end
     % benthic
-    if (loc_D_n == loc_D_nmax),
+    if (loc_D_n == loc_D_nmax)
         loc_data(loc_lon_n,loc_lat_n) = data_gridded(loc_lon_n,loc_lat_n,loc_D_n);
         grid_data_count(loc_lon_n,loc_lat_n) = loc_n_n;
         n_ben = n_ben+1;
@@ -399,8 +408,6 @@ fid = fopen([str_data_filenameout '.' str_date '.txt'],'w');
 fprintf(fid,'%s\n','##################################################################################');
 fprintf(fid,'\n');
 fprintf(fid,'%s\n',['# of raw data points     = ',num2str(diag_data_n_raw)]);
-% fprintf(fid,'%s\n',['sum of raw data          = ',num2str(diag_raw_sum)]);
-% fprintf(fid,'%s\n',['mean of raw data         = ',num2str(diag_raw_mean)]);
 fprintf(fid,'%s\n',['# of (grid) valid data   = ',num2str(diag_data_n_valid)]);
 fprintf(fid,'\n');
 fprintf(fid,'%s\n',['# of gridded data points = ',num2str(diag_data_n)]);
@@ -526,7 +533,7 @@ netcdf.close(ncid);
 %
 % END
 close all;
-disp(['<<< END [make_regrid_data2netcdf_GENIE]']);
-disp([' ']);
+disp('<<< END [make_regrid_data2netcdf_GENIE]');
+disp(' ');
 %
 % *********************************************************************** %

@@ -52,6 +52,8 @@ function [] = make_regrid_data2netcdf_WOA(PDATA,PNAME,PLNAME,PUNITS,PNLON,PNLAT,
 %             added additional lon-lat grid point finding filters
 %             (for dealing with grid boundaries)
 %   17/09/26: edited output file string
+%   21/04/27: cleaned up comments, IF commas
+%             upgraded data read (with fun_read_file)
 %
 %   ***********************************************************************
 
@@ -61,7 +63,7 @@ function [] = make_regrid_data2netcdf_WOA(PDATA,PNAME,PLNAME,PUNITS,PNLON,PNLAT,
 %
 % *** START ************************************************************* %
 % 
-disp(['START [make_regrid_data2netcdf] >>>'])
+disp('START [make_regrid_data2netcdf] >>>')
 %
 % *** dummy variable processing ***************************************** %
 %
@@ -83,7 +85,9 @@ str_data_filenameout = [str_data_filenamein '_WOA'];
 %
 par_grid_lon_offset = -180.0;
 % lon (west boundary)
-for i=1:n_lon,
+loc_axis_lonedge = zeros(n_lon,1);
+loc_axis_dlon    = zeros(n_lon,1);
+for i=1:n_lon
     loc_axis_lonedge(i)  = (i-1)*(360.0/n_lon) + par_grid_lon_offset;
     loc_axis_dlon(i) = (360.0/n_lon);
 end
@@ -93,7 +97,9 @@ loc_axis_lonbnds(1:n_lon,1) = loc_axis_lonedge(1:n_lon);
 loc_axis_lonbnds(1:n_lon,2) = loc_axis_lonedge(2:n_lon+1);
 loc_axis_lonbnds = loc_axis_lonbnds';
 % lat (south boundary)
-for j=1:n_lat,
+loc_axis_latedge = zeros(n_lat,1);
+loc_axis_dlat    = zeros(n_lat,1);
+for j=1:n_lat
     loc_axis_latedge(j)  = (j-1)*(180/n_lat) + -90.0;
     loc_axis_dlat(j) = (180.0/n_lat);
 end
@@ -103,7 +109,7 @@ loc_axis_latbnds(1:n_lat,1) = loc_axis_latedge(1:n_lat);
 loc_axis_latbnds(1:n_lat,2) = loc_axis_latedge(2:n_lat+1);
 loc_axis_latbnds = loc_axis_latbnds';
 % depth (upper boundary)
-if ( isempty(str_depthgrid) || strcmp('WOA',str_depthgrid) || strcmp('woa',str_depthgrid) ),
+if ( isempty(str_depthgrid) || strcmp('WOA',str_depthgrid) || strcmp('woa',str_depthgrid) )
     loc_axis_Dedge = [0,10,20,30,50,75,100,125,150,200,250,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1750,2000,2500,3000,3500,4000,4500,5000,5500,6000];
     loc_axis_Dmid = [5,15,25,40,62.5,87.5,112.5,137.5,175,225,275,350,450,550,650,750,850,950,1050,1150,1250,1350,1450,1625,1875,2250,2750,3250,3750,4250,4750,5250,5750];
     n_D = length(loc_axis_Dmid);
@@ -131,16 +137,47 @@ str_date = [datestr(date,11), datestr(date,5), datestr(date,7)];
 %
 % *** load data ********************************************************* %
 %
-if (exist(str_data_filenamein,'file') == 2),
-    fid = fopen(str_data_filenamein);
-    C = textscan(fid, '%f %f %f %f %s', 'CommentStyle', '%');
-    data_raw = cell2mat(C(1:4));
-    fclose(fid);
-    data_size = size(data_raw(:,:));
-    nmax=data_size(1);
-    if (length(find(isnan(data_raw))) > 0),
-        disp(['WARNING: ', 'The data file: ', str_data_filenamein, ' does not contain numeric data in a consistent 4-column (lon,lat,depth,value), space-seperated format, or it contains NaNs. Recommend is to remove NaN containing lines.']);
+if (exist(str_data_filenamein,'file') == 2)
+    % read data(!)
+    [file_data] = fun_read_file(str_data_filenamein);
+    % extract data cell array, and vector format
+    cdata    = file_data.cdata;
+    v_format = file_data.vformat;
+    % determine number of rows and columns
+    n_rows    = length(cdata);
+    n_columns = length(v_format);
+    % parse call array data
+    % NOTE: create dummay (blank space) labels if no label in format
+    % NOTE: set flag for a valid format
+    flag_format = false;
+    switch n_columns
+        case 4
+            if (sum(v_format(1:4)) == 0)
+                % lon, lat, depth, value
+                data_raw = cell2mat(cdata(:,1:4));
+                % flag for a valid format
+                flag_format      = true;
+            end
+        case 5
+            if ((sum(v_format(1:4)) == 0))
+                % lon, lat, depth, value, (LABEL)
+                data_raw = cell2mat(cdata(:,1:4));
+                % flag for a valid format
+                flag_format      = true;
+            end
+        otherwise
+            % (caught by the default of ~flag_format)
     end
+    if (~flag_format)
+        disp([' ']);
+        disp([' * ERROR: Data format not recognized:']);
+        disp(['   Number of data columns found == ' num2str(n_columns)']);
+        disp(['   Columns must be: comma/tab/space-separated.']);
+        disp([' ']);
+        fclose(fid);
+        return;
+    end
+    nmax = n_rows;
 else
     disp(['ERROR: ', 'File: ', str_data_filenamein, ' does not exist anywhere in the MATLAB directory path.']);
     return;
@@ -152,8 +189,8 @@ diag_data_n_raw = nmax;
 %
 % remove any data deeper that the bottom of the depth grid and update nmax
 n = 1;
-while (n <= nmax),
-    if (data_raw(n,3) > max_D),
+while (n <= nmax)
+    if (data_raw(n,3) > max_D)
         data_raw(n,:) = [];
         nmax = nmax - 1;
     else
@@ -161,14 +198,14 @@ while (n <= nmax),
     end
 end
 % filter lon,lat values
-for n = 1:nmax,
+for n = 1:nmax
     if (data_raw(n,1) < par_grid_lon_offset), data_raw(n,1) = data_raw(n,1) + 360.0; end
     if (data_raw(n,1) > (par_grid_lon_offset + 360.0)), data_raw(n,1) = data_raw(n,1) - 360.0; end
-    if ( (data_raw(n,2) > 90.0) || (data_raw(n,2) < -90.0) ),
+    if ( (data_raw(n,2) > 90.0) || (data_raw(n,2) < -90.0) )
         disp(['ERROR: ', 'Something odd with the latitude values in file: ', str_data_filenamein, ' -- maybe latitude is not the 2nd data column as it should be?']);
         return;
     end
-    if (data_raw(n,3) < 0.0),
+    if (data_raw(n,3) < 0.0)
         disp(['ERROR: ', 'Something odd with the depth values in file: ', str_data_filenamein, ' -- maybe depth is given as a negative height or depth is is not the 3rd data column as it should be?']);
         return;
     end
@@ -190,14 +227,14 @@ data_gridded_2Dcount = zeros(n_lon,n_lat);
 %       lat >= lat_edge(n)
 %       lat < lat_edge(n+1)
 % NOTE: deal with special cases of lon or lat grid boundary values
-for n = 1:nmax,
+for n = 1:nmax
     loc_lon_n = intersect(find(data_raw(n,1)>=loc_axis_lonedge(:)),find(data_raw(n,1)<loc_axis_lonedge(:))-1);
     if (abs(data_raw(n,1)) == abs(par_grid_lon_offset)), loc_lon_n = 1; end
     loc_lat_n = intersect(find(data_raw(n,2)>=loc_axis_latedge(:)),find(data_raw(n,2)<loc_axis_latedge(:))-1);
     if (data_raw(n,2) == -90), loc_lat_n = 1; end
     if (data_raw(n,2) == 90), loc_lat_n = n_lat; end
     loc_D_n   = intersect(find(data_raw(n,3)>=loc_axis_Dedge(:)),find(data_raw(n,3)<loc_axis_Dedge(:))-1);
-    if (isempty(loc_lon_n*loc_lat_n*loc_D_n)),
+    if (isempty(loc_lon_n*loc_lat_n*loc_D_n))
         disp(['ERROR: ', 'Failed to regrid ... check lon,lat values and/or grid resolution choice. Error info:']);
         disp(['n = ',num2str(n),' : ',num2str(data_raw(n,4)),' @ ','(',num2str(data_raw(n,1)),',',num2str(data_raw(n,2)),',',num2str(data_raw(n,3)),')',' == ','(',num2str(loc_lon_n),',',num2str(loc_lat_n),',',num2str(loc_D_n),')']);
         return;
@@ -211,13 +248,13 @@ diag_data_n_valid = nmax;
 % average data
 % NOTE: remove duplicate locations (having added the value from there to the running average)
 n = 1;
-while (n <= nmax),
+while (n <= nmax)
     loc_coordinate = data_vector(n,1:3);
     m = n + 1;
     n_dup = 0;
-    while (m <= nmax),
+    while (m <= nmax)
         %disp(['n = ',num2str(n),' : ','m = ',num2str(m)])
-        if (data_vector(m,1:3) == loc_coordinate),
+        if (data_vector(m,1:3) == loc_coordinate)
             %disp(['Duplicate @ ','n = ',num2str(n),', ','m = ',num2str(m)])
             n_dup = n_dup + 1;
             data_vector(n,4) = (n_dup*data_vector(n,4) + data_vector(m,4))/(n_dup + 1);
@@ -232,7 +269,7 @@ end
 % save final data count
 diag_data_n = nmax;
 % populate 3D grid
-for n = 1:nmax,
+for n = 1:nmax
     loc_lon_n = data_vector(n,1);
     loc_lat_n = data_vector(n,2);
     loc_D_n = data_vector(n,3);
@@ -246,8 +283,6 @@ fid = fopen([str_data_filenameout '.' str_date '.txt'],'w');
 fprintf(fid,'%s\n','##################################################################################');
 fprintf(fid,'\n');
 fprintf(fid,'%s\n',['# of raw data points     = ',num2str(diag_data_n_raw)]);
-% fprintf(fid,'%s\n',['sum of raw data          = ',num2str(diag_raw_sum)]);
-% fprintf(fid,'%s\n',['mean of raw data         = ',num2str(diag_raw_mean)]);
 fprintf(fid,'%s\n',['# of (grid) valid data   = ',num2str(diag_data_n_valid)]);
 fprintf(fid,'\n');
 fprintf(fid,'%s\n',['# of gridded data points = ',num2str(diag_data_n)]);
@@ -368,7 +403,7 @@ netcdf.close(ncid);
 % *********************************************************************** %
 %
 % END
-disp(['<<< END [make_regrid_data2netcdf]']);
-disp([' ']);
+disp('<<< END [make_regrid_data2netcdf]');
+disp(' ');
 %
 % *********************************************************************** %
