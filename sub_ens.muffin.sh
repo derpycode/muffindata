@@ -33,7 +33,7 @@ while [ $memberi -le $memberimax ]; do
   
     # submit
     echo $EXPERIMENT"/"$RESTART
-    qsub $QUEUE -j y -o cgenie_log -V -S /bin/bash runmuffin.sh $BASECONFIG $USERCONFIGPATH $EXPERIMENT $YEARS
+    qsub $QUEUE -j y -o cgenie_log -V -S /bin/bash runmuffin.sh $BASECONFIG $USERCONFIGPATH $EXPERIMENT $YEARS $RESTARTID
     sleep 10
     #qstat -f
 
