@@ -1,4 +1,4 @@
-function [] = fun_process_ensemble_2d_cycle(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
+function [] = fun_process_ensemble_cycle(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
 %
 %   ***********************************************************************
 %   *** fun_process_ensemble_2d *******************************************
@@ -180,7 +180,7 @@ struct_plot.xtickangle = 45.0;
 % \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 % /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 % define y axis label
-struct_plot.ylabel = 'YLABEL)';
+struct_plot.ylabel = 'YLABEL';
 %
 % initialize count
 m = 0;

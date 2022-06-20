@@ -384,6 +384,8 @@ for n=1:length(n_BESTS)
     fprintf(fid, '\n');
     fprintf(fid, 'Best (x,y) : %d %d \n', n_x,n_y);
     fprintf(fid, '(ensemble notation: .%d%d ) \n', n_x-1,n_y-1);
+    fprintf(fid, 'Best %s %s \n', char(struct_plot.xlabel),char(struct_plot.xticks(n_x)));
+    fprintf(fid, 'Best %s %s \n', char(struct_plot.ylabel),char(struct_plot.yticks(n_y)));   
     fprintf(fid, '\n');
     fprintf(fid, '------------------------- \n');
     for n=1:n_par
@@ -410,11 +412,16 @@ for n=1:length(n_BESTS)
         disp(['    UN-PACKING ...']);
         untar([str_dir '/' [loc_str_exp str_archive]],str_dir);
         loc_flag_unpack = true;
+    else
+        % ERROR
+        disp([' ** ERROR: Cannot find either results directory or archives file of experiment: ' loc_str_exp]);
+        disp([' ']);
+        return;
     end
     %
     % *** analyse ******************************************************* %
     %
-    loc_str_name = [str_name '.' num2str(n_x-1) num2str(n_y-1)];
+    loc_str_name = [str_name '.' data(n_BEST).dataname '.' num2str(n_x-1) num2str(n_y-1)];
 %     % PO4, O2
 %     plot_fields_biogem_3d_k(loc_str_exp,'worjh2.p_an.200709.nc','ocn_PO4','p_an',loc_year,1,16,'',1.0E-6,-0.5,0.5,40,'','plot_fields_SETTINGS_ANOM',[loc_str_name '.k.PO4.ANOM.SUR']);
 %     plot_fields_biogem_3d_i(loc_str_exp,'worjh2.p_an.200709.nc','ocn_PO4','p_an',loc_year,1,0,'mask_worjh2_AtlanticALL.dat',1.0E-6,-0.5,0.5,40,'','plot_fields_SETTINGS_ANOM',[loc_str_name '.i.PO4.ANOM.ATLALL']);
