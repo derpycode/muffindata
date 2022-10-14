@@ -124,16 +124,6 @@ while go_lines
             end
         end
         loc_unique = false;
-% *** OLD VERSION *********************************************************
-%         % skip rest of line
-%         textscan(fid, '%*[^\n]', 1);
-%         % duplicate vector from previous line
-%         v = s(nl).vector;
-%         loc_unique = false;
-%         % reset loop and update line count
-%         go_columns = false;
-%         nl = nl + 1;
-% *********************************************************************** %
     end
     % update structure data
     s(nl).id = cell2mat(C(1));
@@ -156,6 +146,13 @@ for n=1:par_nmax
     loc_v = find([s(:).id] == n);
     loc_n = loc_v(1);
     par_vmax(n) = length(s(loc_n).vector);
+end
+% check for a 'duplicate' parameter / 'extended 1D' enesmble
+flag_ext1d = false;
+if (par_nmax == 2)
+    if (strcmp(s(1).paramname,s(2).paramname))
+        flag_ext1d = true;
+    end
 end
 %
 % *** create ensemble parameter summary file **************************** %
@@ -217,13 +214,21 @@ for n=1:par_vmax(1)
         loc_str = '# ';
         fprintf(fid, '%s\n', loc_str);
         % write parameters -- loop through all parameters
-        for p=1:par_pmax
-            % add comment line
-            loc_str = ['# parameter: ' s(p).paramname ' -- default value (' num2str(s(p).defaultvalue) ') modified by factor: ' num2str(s(p).vector(loc_vn(s(p).id)))];
+        if (flag_ext1d)
+            % special case of 'extended 1D' ensemble
+            loc_str = ['# parameter: ' s(1).paramname ' -- default value (' num2str(s(1).defaultvalue) ') modified by factor: ' num2str(s(1).vector(loc_vn(s(1).id))+s(2).vector(loc_vn(s(2).id)))];
             fprintf(fid, '%s\n', loc_str);
-            % add parameter line
-            loc_str = [s(p).paramname '=' num2str(s(p).vector(loc_vn(s(p).id))*s(p).defaultvalue)];
+            loc_str = [s(1).paramname '=' num2str((s(1).vector(loc_vn(s(1).id))+s(2).vector(loc_vn(s(2).id)))*s(1).defaultvalue)];
             fprintf(fid, '%s\n', loc_str);
+        else
+            for p=1:par_pmax
+                % add comment line
+                loc_str = ['# parameter: ' s(p).paramname ' -- default value (' num2str(s(p).defaultvalue) ') modified by factor: ' num2str(s(p).vector(loc_vn(s(p).id)))];
+                fprintf(fid, '%s\n', loc_str);
+                % add parameter line
+                loc_str = [s(p).paramname '=' num2str(s(p).vector(loc_vn(s(p).id))*s(p).defaultvalue)];
+                fprintf(fid, '%s\n', loc_str);
+            end
         end
         % add parameter file end marker
         loc_str = '# ';
