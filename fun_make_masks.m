@@ -67,16 +67,16 @@ loc_mask_notk(find(loc_mask_notk > IN_KMAX)) = 1.0;
 % plot and save masks
 % NOTE: remember to get the file in the correct, (lom,lat) orientation!
 % fprint_MASK(loc_mask_all(:,:),[str_k1 '.' 'ALL' '.mask'],true);
-str_file = [str_k1 '.' num2str(IN_KMAX) '_or_deeper' '.mask'];
-plot_2dgridded(flipud(loc_mask_k),99999.0,'',str_file,['mask out -- ' str_file],[0 1]);
-fprint_MASK(loc_mask_k(:,:),str_file,true);
-str_file = [str_k1 '.' 'shallower_than_' num2str(IN_KMAX) '.mask'];
-plot_2dgridded(flipud(loc_mask_notk),99999.0,'',str_file,['mask out -- ' str_file],[0 1]);
-fprint_MASK(loc_mask_notk(:,:),str_file,true);
+str_mask = ['mask.' str_k1 '.' 'le' num2str(IN_KMAX) '.dat'];
+plot_2dgridded(flipud(loc_mask_k),99999.0,'',str_mask,['mask -- ' str_mask],[0 1]);
+fprint_MASK(loc_mask_k(:,:),str_mask,true);
+str_mask = ['mask.' str_k1 '.' 'gt' num2str(IN_KMAX) '.dat'];
+plot_2dgridded(flipud(loc_mask_notk),99999.0,'',str_mask,['mask -- ' str_mask],[0 1]);
+fprint_MASK(loc_mask_notk(:,:),str_mask,true);
 %
 % *** END *************************************************************** %
 %
-%close all;
+close all;
 %
 % *********************************************************************** %
 % *** END *************************************************************** %
