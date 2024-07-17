@@ -11,10 +11,21 @@ function [] = fun_make_ensemble_2d(STR_TEMPLATE,STR_PARAMS)
 %   The resulting ensemble can be submitted by modifying the BASH script:
 %   sub_ens.muffin.sh
 %
-%   STR_TEMPLATE == template filename
-%   STR_PARAMS   == parameter configuration (omitting '.dat' extension)
+%   STR_TEMPLATE == full filename of the 'template' (default) user-config
+%                   NOTE: this filename can be anything you want and
+%                         will not form part of the ensemble name
+%   STR_PARAMS   == full filename of the parameter configuration file
+%                   NOTE: this filename can be anything you want, but:
+%                         (i)  it will form the ensemble name
+%                         (ii) if it ends in '.dat' or '.txt', the
+%                              extension will be stripped off 
 %
-%   file format (by column number):
+%  fun_make_ensemble_2d must be run form the same directory that contains:
+%  (a) the 'template' (default) user-config file
+%  (b) the file containing the parameter configuration
+%
+%   The format of the file containing the parameter configuration is
+%   (by column number):
 %   (1) parameter change number (ID) [integer]
 %   (2) parameter name [string]
 %   (3) default parameter value
@@ -28,33 +39,33 @@ function [] = fun_make_ensemble_2d(STR_TEMPLATE,STR_PARAMS)
 % 
 %   EXAMPLE 1
 %
-%   parameter configuration file contents:
+%   The parameter configuration file contents:
 %
 %   1 go_0 1.0E-3 0.0 10.0 100.0 -99
 %   2 ea_0 1.0E6  1.0 0.8 0.6 0.4 0.2 0.0 -999
 %
-%   creates a 3 x 6 ensemble,
+%   would create a 3 x 6 ensemble,
 %   modifying param setting go_0=1.0E-3 by vector [0.0 10.0 100.0]
 %   and parameter setting ea_0=1.0E6 by vector [1.0 0.8 0.6 0.4 0.2 0.0]
 %
 %   EXAMPLE 2
 %
-%   parameter configuration file contents:
+%   The parameter configuration file contents:
 %
 %   1 go_0 1.0E-3 0.0 10.0 100.0 -99
 %   1 go_9 1.0E-9 1.0 2.0 3.0 -99
 %   2 ea_0 1.0E6  1.0 0.8 0.6 0.4 0.2 0.0 -999
 %
-%   is as example #1, but also modifying go_9 at the same time as go_0
+%   would create a 3 x 6 ensemble as example #1, 
+%   but also modifying go_9 at the same time as go_0
 %
 %   EXAMPLE 3
 %
-%   parameter configuration file contents:
+%   The parameter configuration file contents:
 %
 %   1 go_0 1.0E-3 0.0 10.0 100.0 -999
 %
-%   is as example #1, but only varying the 1st parameter
-%   to create a 1-D ensemble
+%   creates a 6 x 1 (1D) ensemble in which only the 1st parameter varies.
 %
 %   ***********************************************************************
 %   *** HISTORY ***********************************************************
@@ -63,6 +74,7 @@ function [] = fun_make_ensemble_2d(STR_TEMPLATE,STR_PARAMS)
 %   20/02/29: set count of ensemble # to start from 0 (rather than 1)
 %   20/11/25: updated to allow independent additional 1st or 2nd
 %             axis parameters
+%   24/07/17: improved commenting
 %
 %   ***********************************************************************
 
@@ -76,15 +88,15 @@ function [] = fun_make_ensemble_2d(STR_TEMPLATE,STR_PARAMS)
 str_date = [datestr(date,11), datestr(date,5), datestr(date,7)];
 % set template user-config filename
 str_template = STR_TEMPLATE;
-% set parameter definition filename string (omitting '.dat' extension)
+% set parameter definition filename string
 str_file = [STR_PARAMS];
 % define a structure for later
 s = struct;
 %
 % *** load ensemble parameter file ************************************** %
 %
-% open ...
-fid = fopen([str_file '.dat']);
+% open parameter configuration file ...
+fid = fopen(str_file);
 % initialize the loop
 nl = 0;
 go_lines = true;
@@ -157,15 +169,20 @@ end
 %
 % *** create ensemble parameter summary file **************************** %
 %
-str_keyfile = [str_date '.' str_file '.KEY.txt'];
+% try and shorten parameter filename string
+str_name = str_file;
+if (strcmp(str_file(end-3:end),'.dat')), str_name = str_file(1:end-4); end
+if (strcmp(str_file(end-3:end),'.txt')), str_name = str_file(1:end-4); end
+%
+str_keyfile = [str_date '.' str_name '.KEY.txt'];
 fid0 = fopen(str_keyfile, 'w');
 loc_str = [' ***********************************************************'];
 fprintf(fid0, '%s\n', loc_str);
-loc_str = ['     ensemble name                    : ' str_date '.' str_file];
+loc_str = ['     ensemble name                    : ' str_date '.' str_name];
 fprintf(fid0, '%s\n', loc_str);
 loc_str = ['     template user-config filename    : ' str_template];
 fprintf(fid0, '%s\n', loc_str);
-loc_str = ['     parameter specification filename : ' [str_file '.dat']];
+loc_str = ['     parameter specification filename : ' str_file];
 fprintf(fid0, '%s\n', loc_str);
 for n=1:par_pmax
     if (s(n).unique)

@@ -40,7 +40,7 @@ n_columns = length(v_format);
 flag_format = false;
 % parse call array data
 % NOTE: valid formats are:
-%       3: lon,lad,depth
+%       3: lon,lat,depth
 %       4: lon,lat,depth,value
 %       4: lon,lad,depth,label
 %       5: lon,lat,depth,value,label
@@ -102,7 +102,7 @@ if (nmax < n_rows)
 end
 % check for mixed up lon-lat ... i.e. not (LON, LAT) format
 if ( (min(data_raw(:,2)) < -90) || (max(data_raw(:,2)) > 90) )
-    loc_tmp = overlaydata_raw(:,1);
+    loc_tmp = data_raw(:,1);
     data_raw(:,1) = data_raw(:,2);
     data_raw(:,2) = loc_tmp;
     disp([' ']);

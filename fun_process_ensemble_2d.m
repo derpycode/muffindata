@@ -14,18 +14,24 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
 %               (which could be different to and more meaningful than
 %                e.g. DUM_ENSEMBLE)
 %
-%   NOTE: the ensmeble member number consists of 2 digits, 
-%         each between 0 and 9
-%         this code is represented in the comments by ##
+%   NOTE: you must add a path ('addpath') the location of plot_2dgridded2
+%         (in muffindata folder) if it is not already present in the same
+%         directory in whcih you are running fun_process_ensemble_2d
+%   NOTE: if you process time-slice (netCDF) data of the ensemble analysis,
+%         you must add a path to the location of the muffinplot folder
+%
+%   NOTE: You need to EDIT this file to make it work ...
+%         and ADD code inbetween the indicated marker lines:
+% \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+% /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 %
 %   For the selection of variables to extract and plot/analyse, 
 %   some commond examples are given below
 %   NOTE: these must be (uncommented and) copy-pasted in the appropriate 
 %         section of the code
 % 
-%   time-series:
+%   EXAMPLE time-series:
 %
-%   \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 %   % atmopsheric pCO2
 %   m = m+1;
 %   data(m).dataname = 'atm_pCO2';
@@ -82,11 +88,9 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
 %   data(m).scale    = 1.0;
 %   data(m).dataunit = 'MSS (n/a)';
 %   data(m).minmax   = [0.4 0.6];
-%   /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 % 
-%   time-slices:
+%   EXAMPLE time-slices:
 %
-% \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 %   % extract AMOC
 %   n = n + 1;
 %   str = plot_fields_biogem_3d_i(loc_str_exp,'','ocn_temp','',loc_year,-1,0,['mask_worlg4_Atlantic.dat'],1.0,0.0,30.0,30,'','plot_fields_settings_OPSI_ATL',[loc_str_exp '.MOC.ATL']);
@@ -114,7 +118,6 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
 %   str = plot_fields_biogem_3d_k(loc_str_exp,'worlg4.WOA13_O2_molkg-1_worlg4.151208.nc','ocn_O2','O2',loc_year,1,0,'',1.0E-6,-20.0,20.0,40,'','plot_fields_SETTINGS_ANOM',[loc_str_exp '.O2.AMON']);
 %   loc_data = str.statm_m;
 %   data(n).array(y,x) = data(n).scale*loc_data;
-% /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
 %
 %   ***********************************************************************
 %   *** HISTORY ***********************************************************
@@ -125,6 +128,7 @@ function [] = fun_process_ensemble_2d(DUM_ENSEMBLE,DUM_YEAR,DUM_NAME)
 %             + pick out specific time rather than just end of time-series
 %   21/03/25: modified warning error behaviour
 %             examples and commenting, tidy-up
+%   24/07/17: improved commenting
 %
 %   ***********************************************************************
 
@@ -159,8 +163,12 @@ str_data = '';    % data file name (if any)
 % --- STEP #1 ----------------------------------------------------------- %
 % define ensemble x axis
 % NOTE: the length of the tick label structure defines the size of the 
-%       first dimension of the ensemble, e.g.
+%       first dimension of the ensemble, e.g.,
+%       struct_plot.xticks = {'0.0'; '0.1'; '0.2'; '0.3'; '0.4'};
+%       is for an ensemble size with the first dimension length 5
+% NOTE: there are strings and do not need to be numbers, e.g.,
 %       struct_plot.xticks = {'DEFAULT'; '+seaice'; '+MLDexport'; '+MLDexport+seaice'; '+diagMLD'; '+diagMLD+seaice'};
+%       is for an ensemble size with the first dimension length 6
 % NOTE: for a 1-D (vertical) ensemble, set a single dummy label, e.g.
 %       struct_plot.xticks = {'1D'};
 % \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
@@ -175,6 +183,7 @@ struct_plot.xtickangle = 45.0;
 % NOTE: the length of the tick label structure defines the size of the 
 %       second dimension of the ensemble, e.g.
 %       struct_plot.yticks = {'1.00'; '0.95'; '0.90'; '0.85'; '0.80'; '0.75'; '0.70'};
+%       is for an ensemble size with the second dimension length 7
 % NOTE: for a 1-D (vertical) ensemble, set a single dummy label, e.g.
 %       struct_plot.xticks = {'1D'};
 % \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/

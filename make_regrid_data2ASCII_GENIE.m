@@ -289,7 +289,6 @@ if ~isempty(data_mask),
         for j = 1:n_j,
             if (data_mask(i,j) == 0),
                 data_tmp(i,j) = abs(loc_nullvalue);
-            end
         end
     end
     figure;
@@ -302,6 +301,20 @@ str_filename_datacount = [str_name, '.GRIDDED_DATACOUNT', '.', str_date, '.dat']
 % save gridded data
 fprint_2DM(data_gridded(:,:)',data_mask(:,:)',str_filename_data,'%14.6e','%14.1f',false,false);
 fprint_2DM(data_gridded_count(:,:)',data_mask(:,:)',str_filename_datacount,'%14.6e','%14.1f',false,false);
+%
+% *** 1D **************************************************************** %
+%
+% write out data in 1D format
+% filted masked data from vector
+for n = 1:nmax
+    if (data_mask(data_vector(n,1),data_vector(n,2)) == 0)
+        data_vector(n,:) = [];
+        nmax = nmax - 1;
+    end
+end
+% write data vector [lon,lat,value]
+str_filename_datavector = [str_name, '.ijMEANVALUE', '.', str_date, '.dat'];
+fprint_1Dn_d([data_vector(:,1) data_vector(:,2) data_vector(:,3)],str_filename_datavector);
 %
 % *** DIAGNOSTICS ******************************************************* %
 %
