@@ -18,7 +18,8 @@ function [] = fun_make_ensemble_2d(STR_TEMPLATE,STR_PARAMS)
 %                   NOTE: this filename can be anything you want, but:
 %                         (i)  it will form the ensemble name
 %                         (ii) if it ends in '.dat' or '.txt', the
-%                              extension will be stripped off 
+%                              extension will be stripped out of the
+%                              saved ensemble member filenames
 %
 %  fun_make_ensemble_2d must be run form the same directory that contains:
 %  (a) the 'template' (default) user-config file
@@ -219,7 +220,7 @@ for n=1:par_vmax(1)
         loc_vn = [n m];
         % copy template
         str_templatefilein  = [str_template];
-        str_templatefileout = [str_date '.' str_file '.' num2str(n-1) num2str(m-1)];
+        str_templatefileout = [str_date '.' str_name '.' num2str(n-1) num2str(m-1)];
         copyfile(str_templatefilein,str_templatefileout,'f');
         % open sesame! (file pipe of ensemble member user-config)
         fid = fopen(str_templatefileout, 'a+');
